@@ -8,6 +8,7 @@ import { api } from '../../api';
 import { CATEGORIES, toSlug } from '../../categories';
 import { Image } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function EditBusinessScreen({ route, navigation }) {
   const { vendor } = route.params;
@@ -103,17 +104,18 @@ export default function EditBusinessScreen({ route, navigation }) {
         const form = new FormData();
 
         for (let i = 0; i < result.assets.length; i++) {
-        const asset = result.assets[i];
+  // compress first: max 1200px wide, JPEG quality 60%
+  const small = await ImageManipulator.manipulateAsync(
+    result.assets[i].uri,
+    [{ resize: { width: 1200 } }],
+    { compress: 0.6, format: ImageManipulator.SaveFormat.JPEG }
+  );
 
-        const response = await fetch(asset.uri);
-        const blob = await response.blob();
+  const response = await fetch(small.uri);
+  const blob = await response.blob();
 
-        form.append(
-            'photos',
-            blob,
-            `photo_${Date.now()}_${i}.jpg`
-        );
-        }
+  form.append('photos', blob, `photo_${Date.now()}_${i}.jpg`);
+}
 
         const updatedPhotos = await api('/vendors/me/photos', {
         method: 'POST',
@@ -126,8 +128,8 @@ export default function EditBusinessScreen({ route, navigation }) {
         console.log('PHOTO UPLOAD ERROR:', error);
         Alert.alert('Upload failed', error.message);
     } finally {
-        setUploading(false);
     }
+        setUploading(false);
     };
 
 
