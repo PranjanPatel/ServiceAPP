@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Alert,
   ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform,
@@ -6,6 +6,7 @@ import {
 import * as Location from 'expo-location';
 import { useAuth } from '../context/AuthContext';
 import { CATEGORIES } from '../categories';
+import { api } from '../api';
 
 export default function SignupScreen({ navigation }) {
   const { register } = useAuth();
@@ -26,6 +27,18 @@ export default function SignupScreen({ navigation }) {
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
   const [coords, setCoords] = useState(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [phoneToken, setPhoneToken] = useState(null);
+  const [otpBusy, setOtpBusy] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  // resend countdown
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
 
   const useCurrentLocation = async () => {
     try {
@@ -54,10 +67,50 @@ export default function SignupScreen({ navigation }) {
     }
   };
 
+  const sendOtp = async () => {
+  if (!/^\d{10,15}$/.test(phone.trim())) return Alert.alert('Enter a valid phone number first');
+  try {
+    setOtpBusy(true);
+    await api('/auth/send-otp', { method: 'POST', body: JSON.stringify({ phone: phone.trim() }) });
+    setOtpSent(true);
+    setOtp('');
+    setCooldown(30);
+  } catch (e) {
+    Alert.alert('Could not send OTP', e.message);
+  } finally {
+    setOtpBusy(false);
+  }
+};
+
+const verifyOtp = async () => {
+  if (otp.length !== 6) return Alert.alert('Enter the 6-digit OTP');
+  try {
+    setOtpBusy(true);
+    const data = await api('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ phone: phone.trim(), code: otp }),
+    });
+    setPhoneToken(data.phoneToken);
+  } catch (e) {
+    Alert.alert('Verification failed', e.message);
+  } finally {
+    setOtpBusy(false);
+  }
+};
+
+const onPhoneChange = (t) => {
+  setPhone(t.replace(/\D/g, ''));
+  // changing the number cancels any earlier verification
+  setOtpSent(false);
+  setOtp('');
+  setPhoneToken(null);
+};
+
   const validate = () => {
     if (!name.trim()) return 'Enter your name';
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return 'Enter a valid email';
     if (!/^\d{10,15}$/.test(phone.trim())) return 'Enter a valid phone number (digits only)';
+    if (!phoneToken) return 'Verify your phone number with OTP';
     if (password.length < 6) return 'Password must be at least 6 characters';
     if (password !== confirm) return 'Passwords do not match';
     if (role === 'vendor') {
@@ -80,6 +133,7 @@ export default function SignupScreen({ navigation }) {
       phone: phone.trim(),
       password,
       role,
+      phoneToken,
     };
     if (role === 'vendor') {
       Object.assign(payload, {
@@ -123,8 +177,46 @@ export default function SignupScreen({ navigation }) {
         <TextInput style={s.input} placeholder="Full name" value={name} onChangeText={setName} />
         <TextInput style={s.input} placeholder="Email" autoCapitalize="none"
           keyboardType="email-address" value={email} onChangeText={setEmail} />
-        <TextInput style={s.input} placeholder="Phone number" keyboardType="phone-pad"
-          value={phone} onChangeText={(t) => setPhone(t.replace(/\D/g, ''))} maxLength={15} />
+        <TextInput
+  style={[s.input, phoneToken && s.verifiedInput]}
+  placeholder="Phone number"
+  keyboardType="phone-pad"
+  value={phone}
+  onChangeText={onPhoneChange}
+  maxLength={15}
+  editable={!phoneToken}
+/>
+
+{phoneToken ? (
+  <Text style={s.verified}>✓ Phone number verified</Text>
+) : (
+  <>
+    {!otpSent ? (
+      <TouchableOpacity style={s.otpBtn} onPress={sendOtp} disabled={otpBusy}>
+        {otpBusy ? <ActivityIndicator /> : <Text style={s.otpBtnText}>Send OTP</Text>}
+      </TouchableOpacity>
+    ) : (
+      <View>
+        <TextInput
+          style={[s.input, { letterSpacing: 8, textAlign: 'center', fontSize: 20 }]}
+          placeholder="------"
+          keyboardType="number-pad"
+          maxLength={6}
+          value={otp}
+          onChangeText={(t) => setOtp(t.replace(/\D/g, ''))}
+        />
+        <TouchableOpacity style={s.otpBtn} onPress={verifyOtp} disabled={otpBusy}>
+          {otpBusy ? <ActivityIndicator /> : <Text style={s.otpBtnText}>Verify OTP</Text>}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={sendOtp} disabled={cooldown > 0 || otpBusy}>
+          <Text style={[s.resend, cooldown > 0 && { color: '#999' }]}>
+            {cooldown > 0 ? `Resend OTP in ${cooldown}s` : 'Resend OTP'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    )}
+  </>
+)}
         <TextInput style={s.input} placeholder="Password (min 6 characters)" secureTextEntry
           value={password} onChangeText={setPassword} />
         <TextInput style={s.input} placeholder="Confirm password" secureTextEntry
@@ -201,4 +293,9 @@ const s = StyleSheet.create({
   button: { backgroundColor: '#2563eb', padding: 16, borderRadius: 10, alignItems: 'center', marginTop: 8 },
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 16 },
   link: { color: '#2563eb', textAlign: 'center', marginTop: 18 },
+  verifiedInput: { backgroundColor: '#f0fdf4', borderColor: '#16a34a' },
+  verified: { color: '#16a34a', fontWeight: '600', marginBottom: 12 },
+  otpBtn: { borderWidth: 1, borderColor: '#2563eb', borderRadius: 10, padding: 12, alignItems: 'center', marginBottom: 10 },
+  otpBtnText: { color: '#2563eb', fontWeight: '600' },
+  resend: { color: '#2563eb', textAlign: 'center', marginBottom: 12 },
 });
