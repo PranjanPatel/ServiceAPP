@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+  View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet,
+  StatusBar, Linking,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { api } from '../../api';
 import { toSlug } from '../../categories';
-import { Image } from 'react-native';
+import VendorCard from '../../components/VendorCard';
 
 const RADII = [5, 10, 25, 50];
 
@@ -14,12 +18,14 @@ export default function ResultsScreen({ route, navigation }) {
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [denied, setDenied] = useState(false);
 
   // 1) get the user's location once
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
+        setDenied(true);
         setError('Location permission is needed to find vendors near you.');
         setLoading(false);
         return;
@@ -49,43 +55,91 @@ export default function ResultsScreen({ route, navigation }) {
     })();
   }, [coords, radius, category]);
 
+  const subtitle = loading
+    ? 'Searching near you...'
+    : error
+    ? 'Something went wrong'
+    : `${vendors.length} pro${vendors.length === 1 ? '' : 's'} within ${radius} km`;
+
+  const nextRadius = RADII[RADII.indexOf(radius) + 1];
+
   return (
     <View style={s.container}>
-      <View style={s.radiusRow}>
-        {RADII.map((r) => (
-          <TouchableOpacity key={r} style={[s.chip, radius === r && s.chipActive]} onPress={() => setRadius(r)}>
-            <Text style={[s.chipText, radius === r && s.chipTextActive]}>{r} km</Text>
+      <StatusBar barStyle="light-content" backgroundColor="#2563EB" />
+
+      {/* Blue header */}
+      <View style={s.header}>
+        <View style={s.topRow}>
+          <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()} hitSlop={10}>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
-        ))}
+          <View style={{ flex: 1 }}>
+            <Text style={s.title} numberOfLines={1}>{category}</Text>
+            <Text style={s.subtitle}>{subtitle}</Text>
+          </View>
+        </View>
+
+        <Text style={s.within}>Search within</Text>
+        <View style={s.radiusRow}>
+          {RADII.map((r) => (
+            <TouchableOpacity
+              key={r}
+              style={[s.chip, radius === r && s.chipActive]}
+              onPress={() => setRadius(r)}
+              activeOpacity={0.8}
+            >
+              <Text style={[s.chipText, radius === r && s.chipTextActive]}>{r} km</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
+      {/* Body */}
       {loading ? (
-        <ActivityIndicator size="large" style={{ marginTop: 40 }} />
+        <View style={s.center}>
+          <ActivityIndicator size="large" color="#2563EB" />
+          <Text style={s.centerText}>Finding the best {category.toLowerCase()} pros...</Text>
+        </View>
       ) : error ? (
-        <Text style={s.msg}>{error}</Text>
+        <View style={s.center}>
+          <Ionicons name={denied ? 'location-outline' : 'alert-circle-outline'} size={52} color="#CBD5E1" />
+          <Text style={s.emptyTitle}>{denied ? 'Location is off' : 'Could not load'}</Text>
+          <Text style={s.centerText}>{error}</Text>
+          {denied && (
+            <TouchableOpacity style={s.actionBtn} onPress={() => Linking.openSettings()}>
+              <Text style={s.actionText}>Open settings</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       ) : (
         <FlatList
           data={vendors}
           keyExtractor={(v) => v._id}
-          contentContainerStyle={{ padding: 16 }}
-          ListEmptyComponent={<Text style={s.msg}>No {category} vendors within {radius} km. Try a bigger distance.</Text>}
           renderItem={({ item, index }) => (
-            <TouchableOpacity
-              style={s.card}
-              onPress={() => navigation.navigate('VendorDetail', { id: item._id, distanceKm: item.distanceKm })}
-            >
-              {item.photos?.[0] && <Image source={{ uri: item.photos[0].url }} style={s.cover} />}
-              {index === 0 && <Text style={s.top}>Top rated near you</Text>}
-              <Text style={s.name}>{item.businessName}</Text>
-              <Text style={s.rating}>
-                {item.reviewCount > 0
-                  ? `★ ${item.avgRating.toFixed(1)}  (${item.reviewCount} review${item.reviewCount > 1 ? 's' : ''})`
-                  : 'No reviews yet'}
-                {'   •   '}{item.distanceKm.toFixed(1)} km away
-              </Text>
-              {!!item.description && <Text style={s.desc} numberOfLines={2}>{item.description}</Text>}
-            </TouchableOpacity>
+            <VendorCard
+              item={item}
+              index={index}
+              onPress={() =>
+                navigation.navigate('VendorDetail', { id: item._id, distanceKm: item.distanceKm })
+              }
+            />
           )}
+          contentContainerStyle={{ padding: 20, paddingBottom: 40, flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={s.center}>
+              <Ionicons name="search-outline" size={52} color="#CBD5E1" />
+              <Text style={s.emptyTitle}>No {category} pros found</Text>
+              <Text style={s.centerText}>
+                Nobody within {radius} km yet.{nextRadius ? ' Try a bigger distance.' : ''}
+              </Text>
+              {nextRadius && (
+                <TouchableOpacity style={s.actionBtn} onPress={() => setRadius(nextRadius)}>
+                  <Text style={s.actionText}>Search within {nextRadius} km</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          }
         />
       )}
     </View>
@@ -93,17 +147,37 @@ export default function ResultsScreen({ route, navigation }) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  radiusRow: { flexDirection: 'row', padding: 12, backgroundColor: '#fff' },
-  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 20, paddingVertical: 6, paddingHorizontal: 14, marginRight: 8 },
-  chipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  chipText: { color: '#333' },
-  chipTextActive: { color: '#fff' },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
-  top: { color: '#16a34a', fontWeight: '700', fontSize: 12, marginBottom: 4 },
-  name: { fontSize: 18, fontWeight: '700' },
-  rating: { color: '#555', marginTop: 4 },
-  desc: { color: '#666', marginTop: 8 },
-  msg: { textAlign: 'center', color: '#666', marginTop: 40, paddingHorizontal: 24 },
-  cover: { width: '100%', height: 160, borderRadius: 10, marginBottom: 10 },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
+
+  header: {
+    backgroundColor: '#2563EB',
+    paddingTop: 56,
+    paddingHorizontal: 20,
+    paddingBottom: 22,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+  },
+  topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
+  backBtn: {
+    width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center', justifyContent: 'center', marginRight: 14,
+  },
+  title: { color: '#fff', fontSize: 24, fontWeight: '800' },
+  subtitle: { color: '#BFDBFE', marginTop: 2, fontSize: 14 },
+
+  within: { color: '#BFDBFE', fontSize: 12, marginBottom: 8, fontWeight: '600' },
+  radiusRow: { flexDirection: 'row' },
+  chip: {
+    backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 20,
+    paddingVertical: 7, paddingHorizontal: 16, marginRight: 8,
+  },
+  chipActive: { backgroundColor: '#fff' },
+  chipText: { color: '#fff', fontWeight: '600' },
+  chipTextActive: { color: '#2563EB' },
+
+  center: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36, paddingTop: 70 },
+  centerText: { color: '#94A3B8', textAlign: 'center', marginTop: 8, lineHeight: 20 },
+  emptyTitle: { fontSize: 17, fontWeight: '800', color: '#334155', marginTop: 12 },
+  actionBtn: { backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 22, marginTop: 18 },
+  actionText: { color: '#fff', fontWeight: '700' },
 });
