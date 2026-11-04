@@ -1,353 +1,231 @@
-
 import React from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Alert,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 
-export default function ProfileScreen({navigation }) {
+export default function ProfileScreen({ navigation }) {
   const { user, logout } = useAuth();
 
   const name = user?.name || 'User';
   const email = user?.email || 'No email available';
-  const role = user?.role || 'Member';
+  const phone = user?.phone || 'Not added yet';
+  const isVendor = user?.role === 'vendor';
 
   const initials = name
-    .split(' ')
-    .map(part => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+    .split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+
+  const confirmLogout = () => {
+    Alert.alert('Log out', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Log out', style: 'destructive', onPress: logout },
+    ]);
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+    <View style={s.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#2563EB" />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.container}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Profile</Text>
-          <Text style={styles.headerSubtitle}>
-            Manage your account and preferences
-          </Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        {/* Blue header */}
+        <View style={s.header}>
+          <Text style={s.headerTitle}>My Profile</Text>
+          <Text style={s.headerSub}>Manage your account</Text>
         </View>
 
-        {/* Profile Card */}
-        <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+        {/* Profile card overlapping the header */}
+        <View style={s.profileCard}>
+          <View style={s.avatar}>
+            <Text style={s.avatarText}>{initials}</Text>
           </View>
-
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.email}>{email}</Text>
-
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleText}>{role.toUpperCase()}</Text>
+          <Text style={s.name}>{name}</Text>
+          <Text style={s.email}>{email}</Text>
+          <View style={s.roleBadge}>
+            <Ionicons name={isVendor ? 'briefcase' : 'person'} size={12} color="#2563EB" />
+            <Text style={s.roleText}>{isVendor ? 'SERVICE PROVIDER' : 'CUSTOMER'}</Text>
           </View>
         </View>
 
-        {/* Account Information */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
+        {/* Role shortcut */}
+        <View style={s.block}>
+          {isVendor ? (
+            <View style={s.shortcutRow}>
+              <TouchableOpacity style={s.shortcut} activeOpacity={0.8}
+                onPress={() => navigation.navigate('Dashboard')}>
+                <View style={[s.shortcutIcon, { backgroundColor: '#DBEAFE' }]}>
+                  <Ionicons name="grid" size={22} color="#2563EB" />
+                </View>
+                <Text style={s.shortcutText}>Dashboard</Text>
+                <Text style={s.shortcutSub}>Ratings and reviews</Text>
+              </TouchableOpacity>
 
-          <View style={styles.infoCard}>
-            <InfoRow
-              label="Full Name"
-              value={name}
-              icon="👤"
-            />
-
-            <View style={styles.divider} />
-
-            <InfoRow
-              label="Email Address"
-              value={email}
-              icon="✉️"
-            />
-
-            <View style={styles.divider} />
-
-            <InfoRow
-              label="Phone Number"
-              value={user?.phone || 'Not added yet'}
-              icon="📞"
-            />
-            <View style={styles.divider} />
-
-            <InfoRow
-              label="Account Role"
-              value={role}
-              icon="🛡️"
-            />
-          </View>
-        </View>
-
-       {/* Account Settings */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Account Settings</Text>
-
-        <View style={styles.settingsCard}>
-          <TouchableOpacity
-            style={styles.settingItem}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate('EditProfile')}
-          >
-            <Text style={styles.settingIcon}>✏️</Text>
-            <View style={styles.settingContent}>
-              <Text style={styles.settingTitle}>Edit Profile</Text>
-              <Text style={styles.settingSubtitle}>Update your name and phone number</Text>
+              <TouchableOpacity style={s.shortcut} activeOpacity={0.8}
+                onPress={() => navigation.navigate('Dashboard')}>
+                <View style={[s.shortcutIcon, { backgroundColor: '#D1FAE5' }]}>
+                  <Ionicons name="storefront" size={22} color="#059669" />
+                </View>
+                <Text style={s.shortcutText}>My business</Text>
+                <Text style={s.shortcutSub}>Edit from Dashboard</Text>
+              </TouchableOpacity>
             </View>
-            <Text style={styles.arrow}>›</Text>
-          </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={s.findCard} activeOpacity={0.8}
+              onPress={() => navigation.navigate('Home')}>
+              <View style={[s.shortcutIcon, { backgroundColor: '#FEF3C7' }]}>
+                <Ionicons name="search" size={22} color="#F59E0B" />
+              </View>
+              <View style={{ flex: 1, marginLeft: 14 }}>
+                <Text style={s.shortcutText}>Find a service</Text>
+                <Text style={s.shortcutSub}>Browse top-rated pros near you</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+          )}
         </View>
-      </View>
 
-        {/* Logout */}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={logout}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.logoutIcon}>↪</Text>
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
+        {/* Account information */}
+        <View style={s.block}>
+          <Text style={s.sectionTitle}>Account information</Text>
+          <View style={s.card}>
+            <InfoRow icon="person-outline" label="Full name" value={name} />
+            <View style={s.divider} />
+            <InfoRow icon="mail-outline" label="Email address" value={email} />
+            <View style={s.divider} />
+            <InfoRow icon="call-outline" label="Phone number" value={phone} />
+            <View style={s.divider} />
+            <InfoRow icon="shield-checkmark-outline" label="Account type"
+              value={isVendor ? 'Service provider' : 'Customer'} />
+          </View>
+        </View>
 
-        <Text style={styles.footer}>Your account, your control.</Text>
+        {/* Actions */}
+        <View style={s.block}>
+          <Text style={s.sectionTitle}>Account</Text>
+          <View style={s.card}>
+            <TouchableOpacity style={s.actionRow} activeOpacity={0.7}
+              onPress={() => navigation.navigate('EditProfile')}>
+              <View style={[s.actionIcon, { backgroundColor: '#EFF6FF' }]}>
+                <Ionicons name="create-outline" size={20} color="#2563EB" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={s.actionTitle}>Edit profile</Text>
+                <Text style={s.actionSub}>Update your name and phone number</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <View style={s.divider} />
+
+            <TouchableOpacity style={s.actionRow} activeOpacity={0.7} onPress={confirmLogout}>
+              <View style={[s.actionIcon, { backgroundColor: '#FEF2F2' }]}>
+                <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[s.actionTitle, { color: '#DC2626' }]}>Log out</Text>
+                <Text style={s.actionSub}>Sign out of this device</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text style={s.footer}>Your account, your control.</Text>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
-function InfoRow({ label, value, icon }) {
+function InfoRow({ icon, label, value }) {
   return (
-    <View style={styles.infoRow}>
-      <View style={styles.infoIcon}>
-        <Text>{icon}</Text>
+    <View style={s.infoRow}>
+      <View style={s.infoIcon}>
+        <Ionicons name={icon} size={20} color="#2563EB" />
       </View>
-
-      <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={s.infoLabel}>{label}</Text>
+        <Text style={s.infoValue}>{value}</Text>
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
-
-  container: {
-    padding: 22,
-    paddingBottom: 40,
-  },
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
 
   header: {
-    marginTop: 12,
-    marginBottom: 25,
+    backgroundColor: '#2563EB',
+    paddingTop: 60,
+    paddingHorizontal: 22,
+    paddingBottom: 90,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
-
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 5,
-  },
+  headerTitle: { color: '#fff', fontSize: 26, fontWeight: '800' },
+  headerSub: { color: '#BFDBFE', marginTop: 4, fontSize: 14 },
 
   profileCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 25,
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginTop: -64,
+    borderRadius: 22,
+    paddingBottom: 22,
     alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
+    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
   },
-
   avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    backgroundColor: '#DBEAFE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 15,
-    borderWidth: 3,
-    borderColor: '#BFDBFE',
+    width: 88, height: 88, borderRadius: 44, backgroundColor: '#DBEAFE',
+    alignItems: 'center', justifyContent: 'center',
+    marginTop: -44, borderWidth: 4, borderColor: '#fff',
   },
-
-  avatarText: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#2563EB',
-  },
-
-  name: {
-    fontSize: 23,
-    fontWeight: '800',
-    color: '#0F172A',
-  },
-
-  email: {
-    fontSize: 14,
-    color: '#64748B',
-    marginTop: 6,
-  },
-
+  avatarText: { fontSize: 30, fontWeight: '800', color: '#2563EB' },
+  name: { fontSize: 22, fontWeight: '800', color: '#0F172A', marginTop: 12 },
+  email: { fontSize: 14, color: '#64748B', marginTop: 4 },
   roleBadge: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 20,
-    marginTop: 14,
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#EFF6FF', paddingHorizontal: 14, paddingVertical: 6,
+    borderRadius: 20, marginTop: 14,
   },
+  roleText: { fontSize: 11, fontWeight: '800', color: '#2563EB', letterSpacing: 1, marginLeft: 6 },
 
-  roleText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#2563EB',
-    letterSpacing: 1,
+  block: { paddingHorizontal: 20, marginTop: 24 },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#0F172A', marginBottom: 12 },
+
+  shortcutRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  shortcut: {
+    width: '48%', backgroundColor: '#fff', borderRadius: 18, padding: 16,
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
   },
-
-  section: {
-    marginTop: 28,
+  findCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
+    borderRadius: 18, padding: 16,
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
   },
+  shortcutIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  shortcutText: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
+  shortcutSub: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
 
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 13,
+  card: {
+    backgroundColor: '#fff', borderRadius: 18, paddingHorizontal: 16,
+    elevation: 2, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8, shadowOffset: { width: 0, height: 3 },
   },
+  divider: { height: 1, backgroundColor: '#F1F5F9' },
 
-  infoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-  },
-
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-  },
-
+  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
   infoIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 13,
+    width: 42, height: 42, borderRadius: 12, backgroundColor: '#EFF6FF',
+    alignItems: 'center', justifyContent: 'center', marginRight: 13,
   },
+  infoLabel: { fontSize: 12, color: '#94A3B8', marginBottom: 3 },
+  infoValue: { fontSize: 15, fontWeight: '600', color: '#334155' },
 
-  infoContent: {
-    flex: 1,
+  actionRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 },
+  actionIcon: {
+    width: 42, height: 42, borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center', marginRight: 13,
   },
+  actionTitle: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
+  actionSub: { fontSize: 12, color: '#94A3B8', marginTop: 2 },
 
-  infoLabel: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 4,
-  },
-
-  infoValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#334155',
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-  },
-
-  settingsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingHorizontal: 16,
-  },
-
-  settingItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 17,
-  },
-
-  settingIcon: {
-    fontSize: 21,
-    marginRight: 14,
-  },
-
-  settingContent: {
-    flex: 1,
-  },
-
-  settingTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#1E293B',
-  },
-
-  settingSubtitle: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginTop: 4,
-  },
-
-  arrow: {
-    fontSize: 26,
-    color: '#94A3B8',
-  },
-
-  logoutButton: {
-    flexDirection: 'row',
-    backgroundColor: '#FEF2F2',
-    padding: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 30,
-    borderWidth: 1,
-    borderColor: '#FECACA',
-  },
-
-  logoutIcon: {
-    fontSize: 20,
-    color: '#DC2626',
-    marginRight: 10,
-  },
-
-  logoutText: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#DC2626',
-  },
-
-  footer: {
-    textAlign: 'center',
-    color: '#94A3B8',
-    fontSize: 12,
-    marginTop: 20,
-  },
+  footer: { textAlign: 'center', color: '#94A3B8', fontSize: 12, marginTop: 26 },
 });
-
