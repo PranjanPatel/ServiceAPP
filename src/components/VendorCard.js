@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Linking, Alert, useWindowDimensions,
@@ -6,15 +7,18 @@ import { Ionicons } from '@expo/vector-icons';
 
 // Cloudinary: serve a smaller, auto-optimised version
 const thumb = (url, w = 800) =>
-  url.includes('/upload/') ? url.replace('/upload/', `/upload/w_${w},q_auto,f_auto/`) : url;
+  url.includes('/upload/')
+    ? url.replace('/upload/', `/upload/w_${w},q_auto,f_auto/`)
+    : url;
 
-// WhatsApp expects an international number without "+" or spaces.
-// For Indian 10-digit numbers, automatically prepend country code 91.
+// WhatsApp number formatter
 const getWhatsAppNumber = (phone) => {
   const digits = String(phone || '').replace(/\D/g, '');
   if (!digits) return '';
   if (digits.length === 10) return `91${digits}`;
-  if (digits.length === 11 && digits.startsWith('0')) return `91${digits.slice(1)}`;
+  if (digits.length === 11 && digits.startsWith('0')) {
+    return `91${digits.slice(1)}`;
+  }
   return digits;
 };
 
@@ -40,67 +44,106 @@ const Stars = ({ value }) => (
 
 export default function VendorCard({ item = {}, index = 0, onPress = () => {} }) {
   const { width } = useWindowDimensions();
-  const cardWidth = width - 40; // screen minus 20px padding on each side
+  const cardWidth = width - 40;
+  const imagePadding = 12;
+  const imageWidth = cardWidth - imagePadding * 2;
+
   const [page, setPage] = useState(0);
 
-  // Guard against a missing vendor record while search results are loading or malformed.
   const vendor = item || {};
   const photos = Array.isArray(vendor.photos) ? vendor.photos : [];
   const hasReviews = Number(vendor.reviewCount || 0) > 0;
   const rank = index < 3 && hasReviews ? RANK[index] : null;
 
-  const call = () => Linking.openURL(`tel:${vendor.phone}`);
+  const call = () => {
+    if (vendor.phone) {
+      Linking.openURL(`tel:${vendor.phone}`);
+    }
+  };
 
   const openWhatsApp = async () => {
     const whatsappNumber = getWhatsAppNumber(vendor.phone);
 
     if (!whatsappNumber) {
-      Alert.alert('WhatsApp unavailable', 'This vendor has not added a phone number.');
+      Alert.alert(
+        'WhatsApp unavailable',
+        'This vendor has not added a phone number.'
+      );
       return;
     }
 
     try {
       await Linking.openURL(`https://wa.me/${whatsappNumber}`);
     } catch (e) {
-      Alert.alert('Could not open WhatsApp', 'Please make sure WhatsApp is installed or try again.');
+      Alert.alert(
+        'Could not open WhatsApp',
+        'Please make sure WhatsApp is installed or try again.'
+      );
     }
   };
 
   return (
     <View style={s.card}>
       {/* Photo carousel */}
-      <View>
+      <View style={s.imageContainer}>
         {photos.length > 0 ? (
           <FlatList
             data={photos}
-            keyExtractor={(p) => p._id || p.url}
+            keyExtractor={(p, i) => p._id || p.url || String(i)}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onScroll={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / cardWidth))}
+            onScroll={(e) =>
+              setPage(
+                Math.round(
+                  e.nativeEvent.contentOffset.x / imageWidth
+                )
+              )
+            }
             scrollEventThrottle={16}
             renderItem={({ item: p }) => (
-              <TouchableOpacity activeOpacity={0.95} onPress={onPress}>
-                <Image source={{ uri: thumb(p.url) }} style={{ width: cardWidth, height: 190 }} />
+              <TouchableOpacity
+                activeOpacity={0.95}
+                onPress={onPress}
+                style={{ width: imageWidth }}
+              >
+                <Image
+                  source={{ uri: thumb(p.url) }}
+                  style={s.coverImage}
+                  resizeMode="cover"
+                />
               </TouchableOpacity>
             )}
           />
         ) : (
-          <View style={[s.noCover, { width: cardWidth }]}>
-            <Ionicons name="image-outline" size={40} color="#CBD5E1" />
+          <View style={[s.noCover, { width: imageWidth }]}>
+            <Ionicons
+              name="image-outline"
+              size={40}
+              color="#CBD5E1"
+            />
           </View>
         )}
 
         {rank && (
           <View style={[s.badge, { backgroundColor: rank.bg }]}>
-            <Ionicons name={rank.icon} size={12} color={rank.color} />
-            <Text style={[s.badgeText, { color: rank.color }]}>{rank.label}</Text>
+            <Ionicons
+              name={rank.icon}
+              size={12}
+              color={rank.color}
+            />
+            <Text style={[s.badgeText, { color: rank.color }]}>
+              {rank.label}
+            </Text>
           </View>
         )}
+
         {!hasReviews && (
           <View style={[s.badge, { backgroundColor: '#DBEAFE' }]}>
             <Ionicons name="sparkles" size={12} color="#1D4ED8" />
-            <Text style={[s.badgeText, { color: '#1D4ED8' }]}>New</Text>
+            <Text style={[s.badgeText, { color: '#1D4ED8' }]}>
+              New
+            </Text>
           </View>
         )}
 
@@ -108,11 +151,17 @@ export default function VendorCard({ item = {}, index = 0, onPress = () => {} })
           <>
             <View style={s.counter}>
               <Ionicons name="images" size={12} color="#fff" />
-              <Text style={s.counterText}>{page + 1}/{photos.length}</Text>
+              <Text style={s.counterText}>
+                {page + 1}/{photos.length}
+              </Text>
             </View>
+
             <View style={s.dots}>
               {photos.map((_, i) => (
-                <View key={i} style={[s.dot, i === page && s.dotActive]} />
+                <View
+                  key={i}
+                  style={[s.dot, i === page && s.dotActive]}
+                />
               ))}
             </View>
           </>
@@ -120,47 +169,76 @@ export default function VendorCard({ item = {}, index = 0, onPress = () => {} })
       </View>
 
       {/* Details */}
-      <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={s.body}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={onPress}
+        style={s.body}
+      >
         <View style={s.titleRow}>
-          <Text style={s.name} numberOfLines={1}>{vendor.businessName}</Text>
+          <Text style={s.name} numberOfLines={1}>
+            {vendor.businessName}
+          </Text>
+
           <View style={s.distChip}>
             <Ionicons name="location" size={12} color="#2563EB" />
-            <Text style={s.distText}>{Number(vendor.distanceKm || 0).toFixed(1)} km</Text>
+            <Text style={s.distText}>
+              {Number(vendor.distanceKm || 0).toFixed(1)} km
+            </Text>
           </View>
         </View>
 
         <View style={s.ratingRow}>
           {hasReviews ? (
             <>
-              <Text style={s.ratingNum}>{Number(vendor.avgRating).toFixed(1)}</Text>
-              <Stars value={vendor.avgRating} />
+              <Text style={s.ratingNum}>
+                {Number(vendor.avgRating || 0).toFixed(1)}
+              </Text>
+              <Stars value={vendor.avgRating || 0} />
               <Text style={s.reviewCount}>
-                ({vendor.reviewCount} review{vendor.reviewCount > 1 ? 's' : ''})
+                ({vendor.reviewCount} review
+                {vendor.reviewCount > 1 ? 's' : ''})
               </Text>
             </>
           ) : (
-            <Text style={s.reviewCount}>No reviews yet. Be the first to review</Text>
+            <Text style={s.reviewCount}>
+              No reviews yet. Be the first to review
+            </Text>
           )}
         </View>
 
-        {!!vendor.description && <Text style={s.desc} numberOfLines={2}>{vendor.description}</Text>}
+        {!!vendor.description && (
+          <Text style={s.desc} numberOfLines={2}>
+            {vendor.description}
+          </Text>
+        )}
 
         {!!vendor.address && (
           <View style={s.addrRow}>
-            <Ionicons name="navigate-outline" size={14} color="#94A3B8" />
-            <Text style={s.addr} numberOfLines={1}>{vendor.address}</Text>
+            <Ionicons
+              name="navigate-outline"
+              size={14}
+              color="#94A3B8"
+            />
+            <Text style={s.addr} numberOfLines={1}>
+              {vendor.address}
+            </Text>
           </View>
         )}
       </TouchableOpacity>
 
-      {/* Actions: Call | WhatsApp | View details */}
+      {/* Actions */}
       <View style={s.actions}>
         {!!vendor.phone && (
           <>
-            <TouchableOpacity style={s.callBtn} onPress={call} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={s.callBtn}
+              onPress={call}
+              activeOpacity={0.8}
+            >
               <Ionicons name="call" size={16} color="#059669" />
               <Text style={s.callText}>Call</Text>
             </TouchableOpacity>
+
             <TouchableOpacity
               style={s.whatsappBtn}
               onPress={openWhatsApp}
@@ -168,11 +246,20 @@ export default function VendorCard({ item = {}, index = 0, onPress = () => {} })
               accessibilityRole="button"
               accessibilityLabel={`Contact ${vendor.businessName} on WhatsApp`}
             >
-              <Ionicons name="logo-whatsapp" size={21} color="#FFFFFF" />
+              <Ionicons
+                name="logo-whatsapp"
+                size={21}
+                color="#FFFFFF"
+              />
             </TouchableOpacity>
           </>
         )}
-        <TouchableOpacity style={s.detailBtn} onPress={onPress} activeOpacity={0.8}>
+
+        <TouchableOpacity
+          style={s.detailBtn}
+          onPress={onPress}
+          activeOpacity={0.8}
+        >
           <Text style={s.detailText}>View details</Text>
           <Ionicons name="arrow-forward" size={16} color="#fff" />
         </TouchableOpacity>
@@ -183,55 +270,215 @@ export default function VendorCard({ item = {}, index = 0, onPress = () => {} })
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#fff', borderRadius: 20, marginBottom: 18, overflow: 'hidden',
-    elevation: 3, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    marginBottom: 18,
+    overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
-  noCover: { height: 190, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' },
+
+  // Image spacing
+  imageContainer: {
+    padding: 12,
+  },
+
+  coverImage: {
+    width: '100%',
+    height: 190,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+  },
+
+  noCover: {
+    height: 190,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 14,
+  },
 
   badge: {
-    position: 'absolute', top: 12, left: 12, flexDirection: 'row', alignItems: 'center',
-    borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10,
+    position: 'absolute',
+    top: 20,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
   },
-  badgeText: { fontWeight: '800', fontSize: 11, marginLeft: 5 },
+
+  badgeText: {
+    fontWeight: '800',
+    fontSize: 11,
+    marginLeft: 5,
+  },
+
   counter: {
-    position: 'absolute', top: 12, right: 12, flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 12, paddingVertical: 4, paddingHorizontal: 9,
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
   },
-  counterText: { color: '#fff', fontSize: 12, fontWeight: '700', marginLeft: 5 },
-  dots: { position: 'absolute', bottom: 10, left: 0, right: 0, flexDirection: 'row', justifyContent: 'center' },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)', marginHorizontal: 3 },
-  dotActive: { backgroundColor: '#fff', width: 16 },
 
-  body: { paddingHorizontal: 16, paddingTop: 14 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  name: { flex: 1, fontSize: 19, fontWeight: '800', color: '#0F172A', marginRight: 10 },
+  counterText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '700',
+    marginLeft: 5,
+  },
+
+  dots: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    marginHorizontal: 3,
+  },
+
+  dotActive: {
+    backgroundColor: '#fff',
+    width: 16,
+  },
+
+  body: {
+    paddingHorizontal: 16,
+    paddingTop: 4,
+  },
+
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  name: {
+    flex: 1,
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginRight: 10,
+  },
+
   distChip: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF',
-    borderRadius: 12, paddingVertical: 4, paddingHorizontal: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
   },
-  distText: { color: '#1D4ED8', fontWeight: '700', fontSize: 12, marginLeft: 4 },
 
-  ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  ratingNum: { fontWeight: '800', color: '#92400E', marginRight: 6, fontSize: 15 },
-  reviewCount: { color: '#94A3B8', fontSize: 13, marginLeft: 6 },
+  distText: {
+    color: '#1D4ED8',
+    fontWeight: '700',
+    fontSize: 12,
+    marginLeft: 4,
+  },
 
-  desc: { color: '#64748B', marginTop: 10, lineHeight: 20 },
-  addrRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
-  addr: { flex: 1, color: '#94A3B8', fontSize: 12, marginLeft: 5 },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
 
-  actions: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 14 },
+  ratingNum: {
+    fontWeight: '800',
+    color: '#92400E',
+    marginRight: 6,
+    fontSize: 15,
+  },
+
+  reviewCount: {
+    color: '#94A3B8',
+    fontSize: 13,
+    marginLeft: 6,
+  },
+
+  desc: {
+    color: '#64748B',
+    marginTop: 10,
+    lineHeight: 20,
+  },
+
+  addrRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+
+  addr: {
+    flex: 1,
+    color: '#94A3B8',
+    fontSize: 12,
+    marginLeft: 5,
+  },
+
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    paddingTop: 14,
+  },
+
   callBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#ECFDF5', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18, marginRight: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ECFDF5',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    marginRight: 10,
   },
-  callText: { color: '#059669', fontWeight: '700', marginLeft: 6 },
+
+  callText: {
+    color: '#059669',
+    fontWeight: '700',
+    marginLeft: 6,
+  },
+
   whatsappBtn: {
-    width: 46, height: 44, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#25D366', borderRadius: 12, marginRight: 10,
+    width: 46,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#25D366',
+    borderRadius: 12,
+    marginRight: 10,
   },
+
   detailBtn: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 12,
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2563EB',
+    borderRadius: 12,
+    paddingVertical: 12,
   },
-  detailText: { color: '#fff', fontWeight: '700', marginRight: 6 },
+
+  detailText: {
+    color: '#fff',
+    fontWeight: '700',
+    marginRight: 6,
+  },
 });

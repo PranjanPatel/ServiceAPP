@@ -98,7 +98,7 @@ export default function VendorDetailScreen({ route, navigation }) {
 
       console.log('Create response:', response);
 
-      Alert.alert('Thank you!', 'Your review was submitted.');
+      setSuccessVisible(true);
     }
 
     cancelEdit();
@@ -194,7 +194,7 @@ export default function VendorDetailScreen({ route, navigation }) {
   );
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#F8FAFC' }}
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#efeff0' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
@@ -444,8 +444,15 @@ export default function VendorDetailScreen({ route, navigation }) {
             <Ionicons name="sparkles" size={20} color="#FBBF24" style={s.successStarLeft} />
             <Ionicons name="sparkles" size={20} color="#FBBF24" style={s.successStarRight} />
 
-            <Text style={s.successTitle}>Your review has been updated!</Text>
-            <Text style={s.successSubtitle}>Thank you for your feedback.</Text>
+            <Text style={s.successTitle}>
+              {editingId
+                ? 'Your review has been updated!'
+                : 'Your review has been submitted!'}
+            </Text>
+
+            <Text style={s.successSubtitle}>
+              Thank you for sharing your experience.
+            </Text>
 
             <TouchableOpacity
               style={s.successButton}
@@ -463,7 +470,7 @@ export default function VendorDetailScreen({ route, navigation }) {
 }
 
 const s = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC' },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#efeff0' },
 
   noPhoto: { height: 290, backgroundColor: '#CBD5E1', alignItems: 'center', justifyContent: 'center' },
   shade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 90, backgroundColor: 'rgba(15,23,42,0.22)' },
@@ -540,7 +547,7 @@ const s = StyleSheet.create({
 
   rateLabel: { marginTop: 8, fontWeight: '700', color: '#D97706', fontSize: 15 },
   input: {
-    backgroundColor: '#F8FAFC', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 14,
+    backgroundColor: '#efeff0', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 14,
     padding: 14, marginTop: 16, minHeight: 90, textAlignVertical: 'top', fontSize: 15, color: '#0F172A',
   },
   formActions: { flexDirection: 'row', marginTop: 14 },

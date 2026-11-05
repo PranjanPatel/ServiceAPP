@@ -214,7 +214,7 @@ export default function DashboardScreen({ navigation }) {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8FAFC' }}>
+    <View style={{ flex: 1, backgroundColor: '#efeff0' }}>
       <StatusBar barStyle="light-content" backgroundColor="#2563EB" />
       <FlatList
         data={reviews}
@@ -261,7 +261,7 @@ export default function DashboardScreen({ navigation }) {
 }
 
 const s = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F8FAFC', paddingHorizontal: 36 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#efeff0', paddingHorizontal: 36 },
   emptyTitle: { fontSize: 17, fontWeight: '800', color: '#334155', marginTop: 12 },
   muted: { color: '#94A3B8', textAlign: 'center', marginTop: 6 },
   retryBtn: { backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 18 },

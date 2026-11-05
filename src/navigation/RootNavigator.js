@@ -42,7 +42,7 @@ const stackOptions = (title) => ({
   headerTintColor: '#2563EB',
   headerTitleStyle: { fontWeight: '700', color: '#0F172A' },
   headerShadowVisible: false,
-  headerStyle: { backgroundColor: '#F8FAFC' },
+  headerStyle: { backgroundColor: '#efeff0' },
 });
 
 function UserTabs() {
@@ -89,7 +89,7 @@ export default function RootNavigator() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#efeff0' }}>
         <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );

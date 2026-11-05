@@ -202,7 +202,7 @@ export default function SignupScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#F8FAFC' }}
+      style={{ flex: 1, backgroundColor: '#efeff0' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <StatusBar barStyle="light-content" backgroundColor="#2563EB" />
@@ -457,7 +457,7 @@ const s = StyleSheet.create({
   label: { color: '#334155', fontWeight: '600', marginBottom: 8, marginTop: 10, fontSize: 13 },
 
   inputBox: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#efeff0',
     borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 14, paddingHorizontal: 14,
   },
   textAreaBox: { alignItems: 'flex-start', paddingVertical: 4 },
@@ -486,7 +486,7 @@ const s = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6 },
   chip: {
     flexDirection: 'row', alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0',
-    backgroundColor: '#F8FAFC', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14,
+    backgroundColor: '#efeff0', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 14,
     marginRight: 8, marginBottom: 8,
   },
   chipActive: { backgroundColor: '#2563EB', borderColor: '#2563EB' },

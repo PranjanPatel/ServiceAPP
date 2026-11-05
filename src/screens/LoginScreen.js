@@ -38,7 +38,7 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#F8FAFC' }}
+      style={{ flex: 1, backgroundColor: '#efeff0' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <StatusBar barStyle="light-content" backgroundColor="#2563EB" />
@@ -159,7 +159,7 @@ const s = StyleSheet.create({
 
   label: { color: '#334155', fontWeight: '600', marginBottom: 8, marginTop: 6, fontSize: 13 },
   inputBox: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC',
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#efeff0',
     borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 14, paddingHorizontal: 14,
   },
   inputFocus: { borderColor: '#2563EB', backgroundColor: '#fff' },

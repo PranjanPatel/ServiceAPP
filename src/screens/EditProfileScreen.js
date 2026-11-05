@@ -32,7 +32,7 @@ export default function EditProfileScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#F8FAFC' }}
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: '#efeff0' }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
         <Text style={s.label}>Full name</Text>

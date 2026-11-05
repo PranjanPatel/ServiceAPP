@@ -147,7 +147,7 @@ export default function ResultsScreen({ route, navigation }) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8FAFC' },
+  container: { flex: 1, backgroundColor: '#efeff0' },
 
   header: {
     backgroundColor: '#2563EB',
