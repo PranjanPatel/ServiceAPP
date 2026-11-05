@@ -30,6 +30,9 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+    if (data.user.role === 'admin') {
+      throw new Error('Admin accounts cannot log in to the mobile app. Use the admin panel.');
+    }
     await saveSession(data);
   };
 
