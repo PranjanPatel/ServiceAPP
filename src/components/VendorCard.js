@@ -1,48 +1,59 @@
-
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
-  View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Linking, Alert, useWindowDimensions,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Linking,
+  Alert,
+  useWindowDimensions,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 // Cloudinary: serve a smaller, auto-optimised version
 const thumb = (url, w = 800) =>
-  url.includes('/upload/')
-    ? url.replace('/upload/', `/upload/w_${w},q_auto,f_auto/`)
+  url.includes("/upload/")
+    ? url.replace("/upload/", `/upload/w_${w},q_auto,f_auto/`)
     : url;
 
 // WhatsApp number formatter
 const getWhatsAppNumber = (phone) => {
-  const digits = String(phone || '').replace(/\D/g, '');
-  if (!digits) return '';
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (!digits) return "";
   if (digits.length === 10) return `91${digits}`;
-  if (digits.length === 11 && digits.startsWith('0')) {
+  if (digits.length === 11 && digits.startsWith("0")) {
     return `91${digits.slice(1)}`;
   }
   return digits;
 };
 
 const RANK = [
-  { label: 'Top match', bg: '#FDE68A', color: '#92400E', icon: 'trophy' },
-  { label: '#2', bg: '#E2E8F0', color: '#334155', icon: 'medal' },
-  { label: '#3', bg: '#FFEDD5', color: '#9A3412', icon: 'medal' },
+  { label: "Top match", bg: "#FDE68A", color: "#92400E", icon: "trophy" },
+  { label: "#2", bg: "#E2E8F0", color: "#334155", icon: "medal" },
+  { label: "#3", bg: "#FFEDD5", color: "#9A3412", icon: "medal" },
 ];
 
 const Stars = ({ value }) => (
-  <View style={{ flexDirection: 'row' }}>
+  <View style={{ flexDirection: "row" }}>
     {[1, 2, 3, 4, 5].map((n) => (
       <Ionicons
         key={n}
-        name={n <= Math.round(value) ? 'star' : 'star-outline'}
+        name={n <= Math.round(value) ? "star" : "star-outline"}
         size={14}
-        color={n <= Math.round(value) ? '#F59E0B' : '#CBD5E1'}
+        color={n <= Math.round(value) ? "#F59E0B" : "#CBD5E1"}
         style={{ marginRight: 1 }}
       />
     ))}
   </View>
 );
 
-export default function VendorCard({ item = {}, index = 0, onPress = () => {} }) {
+export default function VendorCard({
+  item = {},
+  index = 0,
+  onPress = () => {},
+}) {
   const { width } = useWindowDimensions();
   const cardWidth = width - 40;
   const imagePadding = 12;
@@ -66,8 +77,8 @@ export default function VendorCard({ item = {}, index = 0, onPress = () => {} })
 
     if (!whatsappNumber) {
       Alert.alert(
-        'WhatsApp unavailable',
-        'This vendor has not added a phone number.'
+        "WhatsApp unavailable",
+        "This vendor has not added a phone number.",
       );
       return;
     }
@@ -76,16 +87,16 @@ export default function VendorCard({ item = {}, index = 0, onPress = () => {} })
       await Linking.openURL(`https://wa.me/${whatsappNumber}`);
     } catch (e) {
       Alert.alert(
-        'Could not open WhatsApp',
-        'Please make sure WhatsApp is installed or try again.'
+        "Could not open WhatsApp",
+        "Please make sure WhatsApp is installed or try again.",
       );
     }
   };
-const isFeatured =
-  vendor.plan?.type === 'featured' &&
-  vendor.plan?.status === 'active' &&
-  (!vendor.plan?.expiresAt ||
-    new Date(vendor.plan.expiresAt).getTime() > Date.now());
+  const isFeatured =
+    vendor.plan?.type === "featured" &&
+    vendor.plan?.status === "active" &&
+    (!vendor.plan?.expiresAt ||
+      new Date(vendor.plan.expiresAt).getTime() > Date.now());
   return (
     <View style={s.card}>
       {/* Photo carousel */}
@@ -98,11 +109,7 @@ const isFeatured =
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             onScroll={(e) =>
-              setPage(
-                Math.round(
-                  e.nativeEvent.contentOffset.x / imageWidth
-                )
-              )
+              setPage(Math.round(e.nativeEvent.contentOffset.x / imageWidth))
             }
             scrollEventThrottle={16}
             renderItem={({ item: p }) => (
@@ -121,21 +128,13 @@ const isFeatured =
           />
         ) : (
           <View style={[s.noCover, { width: imageWidth }]}>
-            <Ionicons
-              name="image-outline"
-              size={40}
-              color="#CBD5E1"
-            />
+            <Ionicons name="image-outline" size={40} color="#CBD5E1" />
           </View>
         )}
 
         {rank && (
           <View style={[s.badge, { backgroundColor: rank.bg }]}>
-            <Ionicons
-              name={rank.icon}
-              size={12}
-              color={rank.color}
-            />
+            <Ionicons name={rank.icon} size={12} color={rank.color} />
             <Text style={[s.badgeText, { color: rank.color }]}>
               {rank.label}
             </Text>
@@ -143,11 +142,9 @@ const isFeatured =
         )}
 
         {!hasReviews && (
-          <View style={[s.badge, { backgroundColor: '#DBEAFE' }]}>
+          <View style={[s.badge, { backgroundColor: "#DBEAFE" }]}>
             <Ionicons name="sparkles" size={12} color="#1D4ED8" />
-            <Text style={[s.badgeText, { color: '#1D4ED8' }]}>
-              New
-            </Text>
+            <Text style={[s.badgeText, { color: "#1D4ED8" }]}>New</Text>
           </View>
         )}
 
@@ -162,10 +159,7 @@ const isFeatured =
 
             <View style={s.dots}>
               {photos.map((_, i) => (
-                <View
-                  key={i}
-                  style={[s.dot, i === page && s.dotActive]}
-                />
+                <View key={i} style={[s.dot, i === page && s.dotActive]} />
               ))}
             </View>
           </>
@@ -173,11 +167,7 @@ const isFeatured =
       </View>
 
       {/* Details */}
-      <TouchableOpacity
-        activeOpacity={0.9}
-        onPress={onPress}
-        style={s.body}
-      >
+      <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={s.body}>
         <View style={s.titleRow}>
           <Text style={s.name} numberOfLines={1}>
             {vendor.businessName}
@@ -190,13 +180,13 @@ const isFeatured =
             </Text>
           </View>
         </View>
-       
-{isFeatured && (
-  <View style={s.featuredBadge}>
-    <Ionicons name="star" size={12} color="#92400E" />
-    <Text style={s.featuredText}>FEATURED</Text>
-  </View>
-)}
+
+        {isFeatured && (
+          <View style={s.featuredBadge}>
+            <Ionicons name="star" size={12} color="#92400E" />
+            <Text style={s.featuredText}>FEATURED</Text>
+          </View>
+        )}
 
         <View style={s.ratingRow}>
           {hasReviews ? (
@@ -207,7 +197,7 @@ const isFeatured =
               <Stars value={vendor.avgRating || 0} />
               <Text style={s.reviewCount}>
                 ({vendor.reviewCount} review
-                {vendor.reviewCount > 1 ? 's' : ''})
+                {vendor.reviewCount > 1 ? "s" : ""})
               </Text>
             </>
           ) : (
@@ -225,11 +215,7 @@ const isFeatured =
 
         {!!vendor.address && (
           <View style={s.addrRow}>
-            <Ionicons
-              name="navigate-outline"
-              size={14}
-              color="#94A3B8"
-            />
+            <Ionicons name="navigate-outline" size={14} color="#94A3B8" />
             <Text style={s.addr} numberOfLines={1}>
               {vendor.address}
             </Text>
@@ -257,11 +243,7 @@ const isFeatured =
               accessibilityRole="button"
               accessibilityLabel={`Contact ${vendor.businessName} on WhatsApp`}
             >
-              <Ionicons
-                name="logo-whatsapp"
-                size={21}
-                color="#FFFFFF"
-              />
+              <Ionicons name="logo-whatsapp" size={21} color="#FFFFFF" />
             </TouchableOpacity>
           </>
         )}
@@ -281,12 +263,12 @@ const isFeatured =
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 20,
     marginBottom: 18,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
@@ -298,75 +280,75 @@ const s = StyleSheet.create({
   },
 
   coverImage: {
-    width: '100%',
+    width: "100%",
     height: 190,
     borderRadius: 14,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: "#F1F5F9",
   },
 
   noCover: {
     height: 190,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 14,
   },
 
   badge: {
-    position: 'absolute',
+    position: "absolute",
     top: 20,
     left: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderRadius: 14,
     paddingVertical: 5,
     paddingHorizontal: 10,
   },
 
   badgeText: {
-    fontWeight: '800',
+    fontWeight: "800",
     fontSize: 11,
     marginLeft: 5,
   },
 
   counter: {
-    position: 'absolute',
+    position: "absolute",
     top: 20,
     right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.55)",
     borderRadius: 12,
     paddingVertical: 4,
     paddingHorizontal: 9,
   },
 
   counterText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: "700",
     marginLeft: 5,
   },
 
   dots: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 20,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
   },
 
   dot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: 'rgba(255,255,255,0.55)',
+    backgroundColor: "rgba(255,255,255,0.55)",
     marginHorizontal: 3,
   },
 
   dotActive: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     width: 16,
   },
 
@@ -376,85 +358,85 @@ const s = StyleSheet.create({
   },
 
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
 
   name: {
     flex: 1,
     fontSize: 19,
-    fontWeight: '800',
-    color: '#0F172A',
+    fontWeight: "800",
+    color: "#0F172A",
     marginRight: 10,
   },
 
   distChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EFF6FF',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#EFF6FF",
     borderRadius: 12,
     paddingVertical: 4,
     paddingHorizontal: 9,
   },
 
   distText: {
-    color: '#1D4ED8',
-    fontWeight: '700',
+    color: "#1D4ED8",
+    fontWeight: "700",
     fontSize: 12,
     marginLeft: 4,
   },
 
   ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 8,
   },
 
   ratingNum: {
-    fontWeight: '800',
-    color: '#92400E',
+    fontWeight: "800",
+    color: "#92400E",
     marginRight: 6,
     fontSize: 15,
   },
 
   reviewCount: {
-    color: '#94A3B8',
+    color: "#94A3B8",
     fontSize: 13,
     marginLeft: 6,
   },
 
   desc: {
-    color: '#64748B',
+    color: "#64748B",
     marginTop: 10,
     lineHeight: 20,
   },
 
   addrRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 10,
   },
 
   addr: {
     flex: 1,
-    color: '#94A3B8',
+    color: "#94A3B8",
     fontSize: 12,
     marginLeft: 5,
   },
 
   actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     paddingTop: 14,
   },
 
   callBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#ECFDF5',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ECFDF5",
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 18,
@@ -462,54 +444,54 @@ const s = StyleSheet.create({
   },
 
   callText: {
-    color: '#059669',
-    fontWeight: '700',
+    color: "#059669",
+    fontWeight: "700",
     marginLeft: 6,
   },
 
   whatsappBtn: {
     width: 46,
     height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#25D366',
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#25D366",
     borderRadius: 12,
     marginRight: 10,
   },
 
   detailBtn: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#2563EB',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#2563EB",
     borderRadius: 12,
     paddingVertical: 12,
   },
 
   detailText: {
-    color: '#fff',
-    fontWeight: '700',
+    color: "#fff",
+    fontWeight: "700",
     marginRight: 6,
   },
   featuredBadge: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  alignSelf: 'flex-start',
-  backgroundColor: '#FEF3C7',
-  borderColor: '#FDE68A',
-  borderWidth: 1,
-  borderRadius: 6,
-  paddingHorizontal: 9,
-  paddingVertical: 5,
-  marginTop: 7,
-},
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    backgroundColor: "#FEF3C7",
+    borderColor: "#FDE68A",
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    marginTop: 7,
+  },
 
-featuredText: {
-  color: '#92400E',
-  fontSize: 10,
-  fontWeight: '800',
-  letterSpacing: 0.6,
-  marginLeft: 4,
-},
+  featuredText: {
+    color: "#92400E",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.6,
+    marginLeft: 4,
+  },
 });
