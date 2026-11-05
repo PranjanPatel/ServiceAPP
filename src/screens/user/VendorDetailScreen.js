@@ -40,6 +40,7 @@ export default function VendorDetailScreen({ route, navigation }) {
   const [busy, setBusy] = useState(false);
   const [page, setPage] = useState(0);
   const [viewer, setViewer] = useState(null);
+  const [successVisible, setSuccessVisible] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -88,7 +89,7 @@ export default function VendorDetailScreen({ route, navigation }) {
 
       console.log('Update response:', response);
 
-      Alert.alert('Updated', 'Your review was updated.');
+      setSuccessVisible(true);
     } else {
       const response = await api('/reviews', {
         method: 'POST',
@@ -143,6 +144,17 @@ export default function VendorDetailScreen({ route, navigation }) {
   const openMaps = () => {
     if (lat == null) return;
     Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+  };
+
+  const openWhatsApp = () => {
+    if (!vendor.phone) return;
+
+    // WhatsApp requires the country code. Assume India (+91) for 10-digit numbers.
+    let phone = String(vendor.phone).replace(/\D/g, '');
+    if (phone.length === 10) phone = `91${phone}`;
+    else if (phone.startsWith('0')) phone = phone.slice(1);
+
+    Linking.openURL(`https://wa.me/${phone}`);
   };
 
   // star rating + comment + buttons (used for new review and for editing)
@@ -260,14 +272,21 @@ export default function VendorDetailScreen({ route, navigation }) {
 
           <View style={s.actions}>
             {!!vendor.phone && (
-              <TouchableOpacity style={s.callBtn} activeOpacity={0.85}
-                onPress={() => Linking.openURL(`tel:${vendor.phone}`)}>
-                <Ionicons name="call" size={18} color="#fff" />
-                <Text style={s.callText}>Call now</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity style={s.callBtn} activeOpacity={0.85}
+                  onPress={() => Linking.openURL(`tel:${vendor.phone}`)}>
+                  <Ionicons name="call" size={17} color="#fff" />
+                  <Text style={s.callText}>Call</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.whatsappBtn} activeOpacity={0.85}
+                  onPress={openWhatsApp}>
+                  <Ionicons name="logo-whatsapp" size={19} color="#fff" />
+                  <Text style={s.callText}>WhatsApp</Text>
+                </TouchableOpacity>
+              </>
             )}
             <TouchableOpacity style={s.dirBtn} activeOpacity={0.85} onPress={openMaps}>
-              <Ionicons name="navigate" size={18} color="#2563EB" />
+              <Ionicons name="navigate" size={17} color="#2563EB" />
               <Text style={s.dirText}>Directions</Text>
             </TouchableOpacity>
           </View>
@@ -398,6 +417,47 @@ export default function VendorDetailScreen({ route, navigation }) {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Review Updated Success Modal - Option 6 */}
+      <Modal
+        visible={successVisible}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        onRequestClose={() => setSuccessVisible(false)}
+      >
+        <View style={s.successOverlay}>
+          <View style={s.successModal}>
+            <TouchableOpacity
+              style={s.successClose}
+              onPress={() => setSuccessVisible(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close confirmation"
+            >
+              <Ionicons name="close" size={22} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <View style={s.successIconContainer}>
+              <Ionicons name="checkmark" size={38} color="#1D4ED8" />
+            </View>
+
+            <Ionicons name="sparkles" size={20} color="#FBBF24" style={s.successStarLeft} />
+            <Ionicons name="sparkles" size={20} color="#FBBF24" style={s.successStarRight} />
+
+            <Text style={s.successTitle}>Your review has been updated!</Text>
+            <Text style={s.successSubtitle}>Thank you for your feedback.</Text>
+
+            <TouchableOpacity
+              style={s.successButton}
+              activeOpacity={0.85}
+              onPress={() => setSuccessVisible(false)}
+              accessibilityRole="button"
+            >
+              <Text style={s.successButtonText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -441,9 +501,13 @@ const s = StyleSheet.create({
   actions: { flexDirection: 'row', marginTop: 20 },
   callBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#16A34A', borderRadius: 14, paddingVertical: 14, marginRight: 10,
+    backgroundColor: '#16A34A', borderRadius: 14, paddingVertical: 14, marginRight: 8,
   },
-  callText: { color: '#fff', fontWeight: '700', fontSize: 15, marginLeft: 8 },
+  whatsappBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#25D366', borderRadius: 14, paddingVertical: 14, marginRight: 8,
+  },
+  callText: { color: '#fff', fontWeight: '700', fontSize: 13, marginLeft: 5 },
   dirBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#EFF6FF', borderRadius: 14, paddingVertical: 14,
@@ -510,6 +574,80 @@ const s = StyleSheet.create({
   youText: { color: '#1D4ED8', fontSize: 11, fontWeight: '700' },
   date: { color: '#94A3B8', fontSize: 12 },
   reviewText: { color: '#475569', marginTop: 12, lineHeight: 21 },
+
+  // Soft & Friendly review-update confirmation modal
+  successOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 25,
+  },
+  successModal: {
+    width: '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 30,
+    paddingHorizontal: 25,
+    paddingTop: 38,
+    paddingBottom: 25,
+    alignItems: 'center',
+    elevation: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  successClose: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    padding: 5,
+  },
+  successIconContainer: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: '#DBEAFE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  successStarLeft: {
+    position: 'absolute',
+    top: 47,
+    left: '20%',
+  },
+  successStarRight: {
+    position: 'absolute',
+    top: 47,
+    right: '20%',
+  },
+  successTitle: {
+    fontSize: 21,
+    fontWeight: '800',
+    color: '#0F172A',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  successSubtitle: {
+    fontSize: 16,
+    color: '#334155',
+    textAlign: 'center',
+    marginBottom: 28,
+  },
+  successButton: {
+    width: '100%',
+    backgroundColor: '#BFDBFE',
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  successButtonText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#1D4ED8',
+  },
 
   modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center' },
   fullImg: { width: '100%', height: '80%' },

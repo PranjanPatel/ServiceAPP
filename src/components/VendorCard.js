@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Linking, useWindowDimensions,
+  View, Text, FlatList, TouchableOpacity, Image, StyleSheet, Linking, Alert, useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 // Cloudinary: serve a smaller, auto-optimised version
 const thumb = (url, w = 800) =>
   url.includes('/upload/') ? url.replace('/upload/', `/upload/w_${w},q_auto,f_auto/`) : url;
+
+// WhatsApp expects an international number without "+" or spaces.
+// For Indian 10-digit numbers, automatically prepend country code 91.
+const getWhatsAppNumber = (phone) => {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length === 10) return `91${digits}`;
+  if (digits.length === 11 && digits.startsWith('0')) return `91${digits.slice(1)}`;
+  return digits;
+};
 
 const RANK = [
   { label: 'Top match', bg: '#FDE68A', color: '#92400E', icon: 'trophy' },
@@ -28,16 +38,33 @@ const Stars = ({ value }) => (
   </View>
 );
 
-export default function VendorCard({ item, index, onPress }) {
+export default function VendorCard({ item = {}, index = 0, onPress = () => {} }) {
   const { width } = useWindowDimensions();
   const cardWidth = width - 40; // screen minus 20px padding on each side
   const [page, setPage] = useState(0);
 
-  const photos = item.photos || [];
-  const hasReviews = item.reviewCount > 0;
+  // Guard against a missing vendor record while search results are loading or malformed.
+  const vendor = item || {};
+  const photos = Array.isArray(vendor.photos) ? vendor.photos : [];
+  const hasReviews = Number(vendor.reviewCount || 0) > 0;
   const rank = index < 3 && hasReviews ? RANK[index] : null;
 
-  const call = () => Linking.openURL(`tel:${item.phone}`);
+  const call = () => Linking.openURL(`tel:${vendor.phone}`);
+
+  const openWhatsApp = async () => {
+    const whatsappNumber = getWhatsAppNumber(vendor.phone);
+
+    if (!whatsappNumber) {
+      Alert.alert('WhatsApp unavailable', 'This vendor has not added a phone number.');
+      return;
+    }
+
+    try {
+      await Linking.openURL(`https://wa.me/${whatsappNumber}`);
+    } catch (e) {
+      Alert.alert('Could not open WhatsApp', 'Please make sure WhatsApp is installed or try again.');
+    }
+  };
 
   return (
     <View style={s.card}>
@@ -95,20 +122,20 @@ export default function VendorCard({ item, index, onPress }) {
       {/* Details */}
       <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={s.body}>
         <View style={s.titleRow}>
-          <Text style={s.name} numberOfLines={1}>{item.businessName}</Text>
+          <Text style={s.name} numberOfLines={1}>{vendor.businessName}</Text>
           <View style={s.distChip}>
             <Ionicons name="location" size={12} color="#2563EB" />
-            <Text style={s.distText}>{Number(item.distanceKm || 0).toFixed(1)} km</Text>
+            <Text style={s.distText}>{Number(vendor.distanceKm || 0).toFixed(1)} km</Text>
           </View>
         </View>
 
         <View style={s.ratingRow}>
           {hasReviews ? (
             <>
-              <Text style={s.ratingNum}>{Number(item.avgRating).toFixed(1)}</Text>
-              <Stars value={item.avgRating} />
+              <Text style={s.ratingNum}>{Number(vendor.avgRating).toFixed(1)}</Text>
+              <Stars value={vendor.avgRating} />
               <Text style={s.reviewCount}>
-                ({item.reviewCount} review{item.reviewCount > 1 ? 's' : ''})
+                ({vendor.reviewCount} review{vendor.reviewCount > 1 ? 's' : ''})
               </Text>
             </>
           ) : (
@@ -116,23 +143,34 @@ export default function VendorCard({ item, index, onPress }) {
           )}
         </View>
 
-        {!!item.description && <Text style={s.desc} numberOfLines={2}>{item.description}</Text>}
+        {!!vendor.description && <Text style={s.desc} numberOfLines={2}>{vendor.description}</Text>}
 
-        {!!item.address && (
+        {!!vendor.address && (
           <View style={s.addrRow}>
             <Ionicons name="navigate-outline" size={14} color="#94A3B8" />
-            <Text style={s.addr} numberOfLines={1}>{item.address}</Text>
+            <Text style={s.addr} numberOfLines={1}>{vendor.address}</Text>
           </View>
         )}
       </TouchableOpacity>
 
-      {/* Actions */}
+      {/* Actions: Call | WhatsApp | View details */}
       <View style={s.actions}>
-        {!!item.phone && (
-          <TouchableOpacity style={s.callBtn} onPress={call} activeOpacity={0.8}>
-            <Ionicons name="call" size={16} color="#059669" />
-            <Text style={s.callText}>Call</Text>
-          </TouchableOpacity>
+        {!!vendor.phone && (
+          <>
+            <TouchableOpacity style={s.callBtn} onPress={call} activeOpacity={0.8}>
+              <Ionicons name="call" size={16} color="#059669" />
+              <Text style={s.callText}>Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={s.whatsappBtn}
+              onPress={openWhatsApp}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={`Contact ${vendor.businessName} on WhatsApp`}
+            >
+              <Ionicons name="logo-whatsapp" size={21} color="#FFFFFF" />
+            </TouchableOpacity>
+          </>
         )}
         <TouchableOpacity style={s.detailBtn} onPress={onPress} activeOpacity={0.8}>
           <Text style={s.detailText}>View details</Text>
@@ -181,12 +219,16 @@ const s = StyleSheet.create({
   addrRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   addr: { flex: 1, color: '#94A3B8', fontSize: 12, marginLeft: 5 },
 
-  actions: { flexDirection: 'row', padding: 16, paddingTop: 14 },
+  actions: { flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: 14 },
   callBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#ECFDF5', borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18, marginRight: 10,
   },
   callText: { color: '#059669', fontWeight: '700', marginLeft: 6 },
+  whatsappBtn: {
+    width: 46, height: 44, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#25D366', borderRadius: 12, marginRight: 10,
+  },
   detailBtn: {
     flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#2563EB', borderRadius: 12, paddingVertical: 12,
