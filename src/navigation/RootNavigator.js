@@ -3,29 +3,46 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
 import HomeScreen from '../screens/user/HomeScreen';
-import DashboardScreen from '../screens/vendor/DashboardScreen';
 import ResultsScreen from '../screens/user/ResultsScreen';
 import VendorDetailScreen from '../screens/user/VendorDetailScreen';
+import DashboardScreen from '../screens/vendor/DashboardScreen';
 import EditBusinessScreen from '../screens/vendor/EditBusinessScreen';
-import { Ionicons } from '@expo/vector-icons';
-import EditProfileScreen from '../screens/EditProfileScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// bottom tab look + icons (screens draw their own blue headers)
 const tabOptions = (icons) => ({ route }) => ({
+  headerShown: false,
   tabBarActiveTintColor: '#2563EB',
   tabBarInactiveTintColor: '#94A3B8',
   tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+  tabBarStyle: { height: 62, paddingBottom: 8, paddingTop: 6 },
   tabBarIcon: ({ focused, color, size }) => (
-    <Ionicons name={focused ? icons[route.name] : `${icons[route.name]}-outline`} size={size} color={color} />
+    <Ionicons
+      name={focused ? icons[route.name] : `${icons[route.name]}-outline`}
+      size={size}
+      color={color}
+    />
   ),
+});
+
+// native header for screens that don't draw their own (Edit profile, Edit business)
+const stackOptions = (title) => ({
+  title,
+  headerBackTitle: 'Back',
+  headerTintColor: '#2563EB',
+  headerTitleStyle: { fontWeight: '700', color: '#0F172A' },
+  headerShadowVisible: false,
+  headerStyle: { backgroundColor: '#F8FAFC' },
 });
 
 function UserTabs() {
@@ -41,11 +58,9 @@ function UserStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="UserTabs" component={UserTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="Results" component={ResultsScreen}
-        options={({ route }) => ({ title: route.params.category })} />
-      <Stack.Screen name="VendorDetail" component={VendorDetailScreen} options={{ title: 'Vendor' }} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen}
-        options={{ title: 'Edit profile', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="Results" component={ResultsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="VendorDetail" component={VendorDetailScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={stackOptions('Edit profile')} />
     </Stack.Navigator>
   );
 }
@@ -63,9 +78,8 @@ function VendorStack() {
   return (
     <Stack.Navigator>
       <Stack.Screen name="VendorTabs" component={VendorTabs} options={{ headerShown: false }} />
-      <Stack.Screen name="EditBusiness" component={EditBusinessScreen} options={{ title: 'Edit business' }} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen}
-        options={{ title: 'Edit profile', headerBackTitle: 'Back' }} />
+      <Stack.Screen name="EditBusiness" component={EditBusinessScreen} options={stackOptions('Edit business')} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} options={stackOptions('Edit profile')} />
     </Stack.Navigator>
   );
 }
@@ -75,8 +89,8 @@ export default function RootNavigator() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <ActivityIndicator size="large" />
+      <View style={{ flex: 1, justifyContent: 'center', backgroundColor: '#F8FAFC' }}>
+        <ActivityIndicator size="large" color="#2563EB" />
       </View>
     );
   }
@@ -84,9 +98,9 @@ export default function RootNavigator() {
   return (
     <NavigationContainer>
       {!user ? (
-        <Stack.Navigator>
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Signup" component={SignupScreen} options={{ headerShown: false }} />
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Signup" component={SignupScreen} />
         </Stack.Navigator>
       ) : user.role === 'vendor' ? (
         <VendorStack />
