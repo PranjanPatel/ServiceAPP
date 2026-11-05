@@ -63,28 +63,55 @@ export default function VendorDetailScreen({ route, navigation }) {
     setComment('');
   };
 
-  const submitReview = async () => {
-    if (!rating) return Alert.alert('Select a star rating');
-    try {
-      setBusy(true);
-      const body = JSON.stringify({ vendorId: id, rating, comment: comment.trim() });
+ const submitReview = async () => {
+  if (!rating) {
+    return Alert.alert('Select a star rating');
+  }
 
-      if (editingId) {
-        await api(`/reviews/${editingId}`, { method: 'PUT', body });
-        Alert.alert('Updated', 'Your review was updated.');
-      } else {
-        await api('/reviews', { method: 'POST', body });
-        Alert.alert('Thank you!', 'Your review was submitted.');
-      }
+  try {
+    setBusy(true);
 
-      cancelEdit();
-      load();
-    } catch (e) {
-      Alert.alert('Could not save', e.message);
-    } finally {
-      setBusy(false);
+    const body = JSON.stringify({
+      vendorId: id,
+      rating,
+      comment: comment.trim(),
+    });
+
+    console.log('Editing review ID:', editingId);
+    console.log('Submitting review body:', body);
+
+    if (editingId) {
+      const response = await api(`/reviews/${editingId}`, {
+        method: 'PUT',
+        body,
+      });
+
+      console.log('Update response:', response);
+
+      Alert.alert('Updated', 'Your review was updated.');
+    } else {
+      const response = await api('/reviews', {
+        method: 'POST',
+        body,
+      });
+
+      console.log('Create response:', response);
+
+      Alert.alert('Thank you!', 'Your review was submitted.');
     }
-  };
+
+    cancelEdit();
+    await load();
+
+  } catch (e) {
+    console.log('Review submission error:', e);
+    console.log('Error message:', e.message);
+
+    Alert.alert('Could not save review', e.message || 'Something went wrong');
+  } finally {
+    setBusy(false);
+  }
+};
 
   if (!data || !data.vendor) {
     return (
