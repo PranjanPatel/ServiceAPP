@@ -117,6 +117,44 @@ export default function DashboardScreen({ navigation }) {
         </View>
       </View>
 
+      {/* Plan */}
+{(() => {
+  const plan = vendor.plan || { type: 'free', status: 'active' };
+  const pending = plan.status === 'pending';
+  const paidActive = plan.type !== 'free' && plan.status === 'active';
+  const expired = paidActive && plan.expiresAt && new Date(plan.expiresAt) < new Date();
+  const names = { free: 'Free', basic: 'Basic', featured: 'Featured' };
+  const prices = { basic: 99, featured: 499 };
+
+  return (
+    <View style={s.block}>
+      <TouchableOpacity
+        style={[s.planCard, (pending || expired) && s.planCardWarn]}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate('Plans', { vendor })}
+      >
+        <View style={s.planIcon}>
+          <Ionicons name={plan.type === 'featured' ? 'flame' : plan.type === 'basic' ? 'ribbon' : 'pricetag'}
+            size={22} color={pending || expired ? '#D97706' : '#2563EB'} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={s.planTitle}>
+            {names[plan.type]} plan{pending ? ' (payment pending)' : expired ? ' (expired)' : ''}
+          </Text>
+          <Text style={s.planSub}>
+            {pending ? `Pay ₹${prices[plan.type]} to activate your plan`
+              : expired ? 'Renew to get your ranking boost back'
+              : paidActive && plan.expiresAt ? `Active until ${new Date(plan.expiresAt).toLocaleDateString()}`
+              : 'Upgrade for a badge and higher ranking'}
+          </Text>
+        </View>
+        <View style={s.planBtn}>
+          <Text style={s.planBtnText}>{pending ? 'Pay now' : expired ? 'Renew' : 'Upgrade'}</Text>
+        </View>
+      </TouchableOpacity>
+    </View>
+  );
+})()}
       {/* Photos */}
       <View style={s.block}>
         <View style={s.sectionRow}>
@@ -341,4 +379,11 @@ const s = StyleSheet.create({
   reviewName: { fontWeight: '700', color: '#0F172A', marginBottom: 3 },
   date: { color: '#94A3B8', fontSize: 12 },
   reviewText: { color: '#475569', marginTop: 12, lineHeight: 21 },
+  planCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 16, padding: 14, borderWidth: 1.5, borderColor: '#BFDBFE' },
+  planCardWarn: { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' },
+  planIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#EFF6FF', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  planTitle: { fontWeight: '800', color: '#0F172A', fontSize: 15 },
+  planSub: { color: '#64748B', fontSize: 12, marginTop: 2 },
+  planBtn: { backgroundColor: '#2563EB', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 14, marginLeft: 8 },
+  planBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 });

@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useAuth } from '../context/AuthContext';
 import { CATEGORIES } from '../categories';
+import { PLANS } from '../plans';
 import { api } from '../api';
 
 // Reusable input with icon, focus + error states
@@ -46,6 +47,7 @@ export default function SignupScreen({ navigation }) {
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
   const [coords, setCoords] = useState(null);
+  const [plan, setPlan] = useState('free');
 
   // otp
   const [otpSent, setOtpSent] = useState(false);
@@ -185,6 +187,7 @@ export default function SignupScreen({ navigation }) {
         address: address.trim(),
         latitude: coords.latitude,
         longitude: coords.longitude,
+        plan,
       });
     }
 
@@ -398,6 +401,49 @@ export default function SignupScreen({ navigation }) {
                   onFocus={() => setFocus('addr')} onBlur={() => setFocus('')} />
               </Field>
 
+              {/* Plan picker */}
+              <Text style={[s.section, { marginTop: 22 }]}>Choose your plan</Text>
+              {PLANS.map((p) => {
+                const active = plan === p.key;
+                return (
+                  <TouchableOpacity
+                    key={p.key}
+                    style={[s.planCard, active && { borderColor: p.color, backgroundColor: p.bg }]}
+                    onPress={() => setPlan(p.key)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={s.planTop}>
+                      <Ionicons
+                        name={active ? 'radio-button-on' : 'radio-button-off'}
+                        size={22}
+                        color={active ? p.color : '#CBD5E1'}
+                      />
+                      <Text style={s.planName}>{p.name}</Text>
+                      {!!p.tag && (
+                        <View style={[s.planTag, { backgroundColor: p.color }]}>
+                          <Text style={s.planTagText}>{p.tag}</Text>
+                        </View>
+                      )}
+                      <Text style={[s.planPrice, { color: p.color }]}>
+                        {p.price === 0 ? 'Free' : `₹${p.price}`}
+                        {p.price > 0 && <Text style={s.planPer}>/mo</Text>}
+                      </Text>
+                    </View>
+                    {p.features.map((f) => (
+                      <View key={f} style={s.planFeature}>
+                        <Ionicons name="checkmark-circle" size={16} color={p.color} />
+                        <Text style={s.planFeatureText}>{f}</Text>
+                      </View>
+                    ))}
+                  </TouchableOpacity>
+                );
+              })}
+              {plan !== 'free' && (
+                <Text style={s.planNote}>
+                  You will pay securely after signing up. Your plan activates as soon as the payment succeeds.
+                </Text>
+              )}
+
               <View style={s.note}>
                 <Ionicons name="images-outline" size={18} color="#1D4ED8" />
                 <Text style={s.noteText}>
@@ -504,6 +550,17 @@ const s = StyleSheet.create({
   },
   locTitle: { fontWeight: '700', color: '#0F172A', fontSize: 15 },
   locSub: { color: '#64748B', fontSize: 12, marginTop: 2 },
+
+  planCard: { borderWidth: 1.5, borderColor: '#E2E8F0', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 14, marginTop: 10 },
+  planTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  planName: { fontSize: 16, fontWeight: '800', color: '#0F172A', marginLeft: 10 },
+  planTag: { borderRadius: 8, paddingVertical: 2, paddingHorizontal: 8, marginLeft: 8 },
+  planTagText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  planPrice: { marginLeft: 'auto', fontSize: 18, fontWeight: '800' },
+  planPer: { fontSize: 12, fontWeight: '600', color: '#94A3B8' },
+  planFeature: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
+  planFeatureText: { color: '#475569', fontSize: 13, marginLeft: 8, flex: 1 },
+  planNote: { color: '#92400E', backgroundColor: '#FFFBEB', borderRadius: 10, padding: 10, fontSize: 12, marginTop: 10 },
 
   note: {
     flexDirection: 'row', backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, marginTop: 14,

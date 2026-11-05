@@ -15,6 +15,8 @@ import ResultsScreen from '../screens/user/ResultsScreen';
 import VendorDetailScreen from '../screens/user/VendorDetailScreen';
 import DashboardScreen from '../screens/vendor/DashboardScreen';
 import EditBusinessScreen from '../screens/vendor/EditBusinessScreen';
+import PlansScreen from '../screens/vendor/PlansScreen';
+import PaymentScreen from '../screens/vendor/PaymentScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -80,6 +82,8 @@ function VendorStack() {
       <Stack.Screen name="VendorTabs" component={VendorTabs} options={{ headerShown: false }} />
       <Stack.Screen name="EditBusiness" component={EditBusinessScreen} options={stackOptions('Edit business')} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} options={stackOptions('Edit profile')} />
+      <Stack.Screen name="Plans" component={PlansScreen} options={stackOptions('Plans')} />
+      <Stack.Screen name="Payment" component={PaymentScreen} options={stackOptions('Secure payment')} />
     </Stack.Navigator>
   );
 }
