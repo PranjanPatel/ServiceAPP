@@ -83,18 +83,40 @@ export default function EditBusinessScreen({ route, navigation }) {
   }, [navigation, dirty]);
 
   const updateLocation = async () => {
+  try {
+    setLocBusy(true);
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') return Alert.alert('Permission needed', 'Allow location access.');
+
+    const pos = await Location.getCurrentPositionAsync({});
+    const { latitude, longitude } = pos.coords;
+    setCoords({ latitude, longitude });
+
+    // convert the new position into a readable address
     try {
-      setLocBusy(true);
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return Alert.alert('Permission needed', 'Allow location access.');
-      const pos = await Location.getCurrentPositionAsync({});
-      setCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-    } catch (e) {
-      Alert.alert('Could not get location', e.message);
-    } finally {
-      setLocBusy(false);
+      const [place] = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const text = place
+        ? [place.name, place.street, place.district, place.city, place.region]
+            .filter(Boolean)
+            .filter((part, i, arr) => arr.indexOf(part) === i) // remove repeated parts
+            .join(', ')
+        : '';
+
+      if (text) {
+        setAddress(text);
+        clear('address');
+      } else {
+        Alert.alert('Location updated', 'We could not find an address for this spot. Please type it in.');
+      }
+    } catch {
+      Alert.alert('Location updated', 'We could not look up the address. Please type it in.');
     }
-  };
+  } catch (e) {
+    Alert.alert('Could not get location', e.message);
+  } finally {
+    setLocBusy(false);
+  }
+};
 
   const validate = () => {
     const e = {};
@@ -321,7 +343,9 @@ export default function EditBusinessScreen({ route, navigation }) {
               </Text>
             </View>
           </TouchableOpacity>
-          <Text style={s.note}>Customers find you by this location, so stand at your shop when updating.</Text>
+          <Text style={s.note}>
+  Tapping this also updates your address. Check it and edit if needed, then tap Save changes.
+</Text>
         </View>
       </ScrollView>
 
