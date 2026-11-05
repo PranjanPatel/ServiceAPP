@@ -12,38 +12,34 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-// Cloudinary: serve a smaller, auto-optimised version
 const thumb = (url, w = 800) =>
-  url.includes("/upload/")
+  url?.includes("/upload/")
     ? url.replace("/upload/", `/upload/w_${w},q_auto,f_auto/`)
     : url;
 
-// WhatsApp number formatter
 const getWhatsAppNumber = (phone) => {
   const digits = String(phone || "").replace(/\D/g, "");
   if (!digits) return "";
   if (digits.length === 10) return `91${digits}`;
-  if (digits.length === 11 && digits.startsWith("0")) {
+  if (digits.length === 11 && digits.startsWith("0"))
     return `91${digits.slice(1)}`;
-  }
   return digits;
 };
 
 const RANK = [
-  { label: "Top match", bg: "#FDE68A", color: "#92400E", icon: "trophy" },
-  { label: "#2", bg: "#E2E8F0", color: "#334155", icon: "medal" },
-  { label: "#3", bg: "#FFEDD5", color: "#9A3412", icon: "medal" },
+  { label: "Top match", bg: "#FFF4D6", color: "#A16207", icon: "trophy" },
+  { label: "#2 Match", bg: "#F1F5F9", color: "#475569", icon: "medal" },
+  { label: "#3 Match", bg: "#FFEDD5", color: "#9A3412", icon: "medal" },
 ];
 
 const Stars = ({ value }) => (
-  <View style={{ flexDirection: "row" }}>
+  <View style={s.stars}>
     {[1, 2, 3, 4, 5].map((n) => (
       <Ionicons
         key={n}
-        name={n <= Math.round(value) ? "star" : "star-outline"}
-        size={14}
-        color={n <= Math.round(value) ? "#F59E0B" : "#CBD5E1"}
-        style={{ marginRight: 1 }}
+        name={n <= Math.round(Number(value || 0)) ? "star" : "star-outline"}
+        size={13}
+        color="#F5A623"
       />
     ))}
   </View>
@@ -55,63 +51,62 @@ export default function VendorCard({
   onPress = () => {},
 }) {
   const { width } = useWindowDimensions();
+
+  // Assumes parent list has 20px horizontal padding
   const cardWidth = width - 40;
-  const imagePadding = 12;
-  const imageWidth = cardWidth - imagePadding * 2;
+  const imageWidth = cardWidth - 20;
 
   const [page, setPage] = useState(0);
 
   const vendor = item || {};
   const photos = Array.isArray(vendor.photos) ? vendor.photos : [];
   const hasReviews = Number(vendor.reviewCount || 0) > 0;
+
   const rank = index < 3 && hasReviews ? RANK[index] : null;
 
-  const call = () => {
-    if (vendor.phone) {
-      Linking.openURL(`tel:${vendor.phone}`);
-    }
-  };
-
-  const openWhatsApp = async () => {
-    const whatsappNumber = getWhatsAppNumber(vendor.phone);
-
-    if (!whatsappNumber) {
-      Alert.alert(
-        "WhatsApp unavailable",
-        "This vendor has not added a phone number.",
-      );
-      return;
-    }
-
-    try {
-      await Linking.openURL(`https://wa.me/${whatsappNumber}`);
-    } catch (e) {
-      Alert.alert(
-        "Could not open WhatsApp",
-        "Please make sure WhatsApp is installed or try again.",
-      );
-    }
-  };
   const isFeatured =
     vendor.plan?.type === "featured" &&
     vendor.plan?.status === "active" &&
     (!vendor.plan?.expiresAt ||
       new Date(vendor.plan.expiresAt).getTime() > Date.now());
+
+  const call = () => {
+    if (vendor.phone) {
+      Linking.openURL(`tel:${vendor.phone}`).catch(() =>
+        Alert.alert("Error", "Unable to open phone dialer."),
+      );
+    }
+  };
+
+  const openWhatsApp = async () => {
+    const number = getWhatsAppNumber(vendor.phone);
+
+    if (!number) {
+      Alert.alert("WhatsApp unavailable", "No phone number available.");
+      return;
+    }
+
+    try {
+      await Linking.openURL(`https://wa.me/${number}`);
+    } catch {
+      Alert.alert("Error", "Could not open WhatsApp.");
+    }
+  };
+
   return (
     <View style={s.card}>
-      {/* Photo carousel */}
+      {/* IMAGE */}
       <View style={s.imageContainer}>
         {photos.length > 0 ? (
           <FlatList
             data={photos}
-            keyExtractor={(p, i) => p._id || p.url || String(i)}
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onScroll={(e) =>
+            keyExtractor={(p, i) => p._id || p.url || String(i)}
+            onMomentumScrollEnd={(e) =>
               setPage(Math.round(e.nativeEvent.contentOffset.x / imageWidth))
             }
-            scrollEventThrottle={16}
             renderItem={({ item: p }) => (
               <TouchableOpacity
                 activeOpacity={0.95}
@@ -120,7 +115,7 @@ export default function VendorCard({
               >
                 <Image
                   source={{ uri: thumb(p.url) }}
-                  style={s.coverImage}
+                  style={[s.coverImage, { width: imageWidth }]}
                   resizeMode="cover"
                 />
               </TouchableOpacity>
@@ -128,59 +123,27 @@ export default function VendorCard({
           />
         ) : (
           <View style={[s.noCover, { width: imageWidth }]}>
-            <Ionicons name="image-outline" size={40} color="#CBD5E1" />
+            <Ionicons name="image-outline" size={42} color="#CBD5E1" />
+            <Text style={s.noCoverText}>No images available</Text>
           </View>
         )}
 
-        {rank && (
-          <View style={[s.badge, { backgroundColor: rank.bg }]}>
-            <Ionicons name={rank.icon} size={12} color={rank.color} />
-            <Text style={[s.badgeText, { color: rank.color }]}>
-              {rank.label}
+        {!isFeatured && (rank || !hasReviews) && (
+          <View
+            style={[s.rankBadge, { backgroundColor: rank?.bg || "#DBEAFE" }]}
+          >
+            <Ionicons
+              name={rank?.icon || "sparkles"}
+              size={13}
+              color={rank?.color || "#1D4ED8"}
+            />
+            <Text style={[s.rankText, { color: rank?.color || "#1D4ED8" }]}>
+              {rank?.label || "New"}
             </Text>
           </View>
         )}
 
-        {!hasReviews && (
-          <View style={[s.badge, { backgroundColor: "#DBEAFE" }]}>
-            <Ionicons name="sparkles" size={12} color="#1D4ED8" />
-            <Text style={[s.badgeText, { color: "#1D4ED8" }]}>New</Text>
-          </View>
-        )}
-
-        {photos.length > 1 && (
-          <>
-            <View style={s.counter}>
-              <Ionicons name="images" size={12} color="#fff" />
-              <Text style={s.counterText}>
-                {page + 1}/{photos.length}
-              </Text>
-            </View>
-
-            <View style={s.dots}>
-              {photos.map((_, i) => (
-                <View key={i} style={[s.dot, i === page && s.dotActive]} />
-              ))}
-            </View>
-          </>
-        )}
-      </View>
-
-      {/* Details */}
-      <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={s.body}>
-        <View style={s.titleRow}>
-          <Text style={s.name} numberOfLines={1}>
-            {vendor.businessName}
-          </Text>
-
-          <View style={s.distChip}>
-            <Ionicons name="location" size={12} color="#2563EB" />
-            <Text style={s.distText}>
-              {Number(vendor.distanceKm || 0).toFixed(1)} km
-            </Text>
-          </View>
-        </View>
-
+        {/* FEATURED BADGE */}
         {isFeatured && (
           <View style={s.featuredBadge}>
             <Ionicons name="star" size={12} color="#92400E" />
@@ -188,73 +151,113 @@ export default function VendorCard({
           </View>
         )}
 
+        {/* IMAGE COUNTER */}
+        {photos.length > 1 && (
+          <>
+            <View style={s.counter}>
+              <Ionicons name="images-outline" size={12} color="#fff" />
+              <Text style={s.counterText}>
+                {page + 1}/{photos.length}
+              </Text>
+            </View>
+
+            <View style={s.dots}>
+              {photos.map((_, i) => (
+                <View key={i} style={[s.dot, page === i && s.dotActive]} />
+              ))}
+            </View>
+          </>
+        )}
+      </View>
+
+      {/* DETAILS */}
+      <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={s.body}>
+        <View style={s.titleRow}>
+          <Text style={s.name} numberOfLines={1}>
+            {vendor.businessName || "Business name"}
+          </Text>
+
+          <View style={s.distance}>
+            <Ionicons name="location" size={13} color="#2563EB" />
+            <Text style={s.distanceText}>
+              {Number(vendor.distanceKm || 0).toFixed(1)} km
+            </Text>
+          </View>
+        </View>
+
+        {/* RATING */}
         <View style={s.ratingRow}>
           {hasReviews ? (
             <>
-              <Text style={s.ratingNum}>
-                {Number(vendor.avgRating || 0).toFixed(1)}
-              </Text>
-              <Stars value={vendor.avgRating || 0} />
-              <Text style={s.reviewCount}>
-                ({vendor.reviewCount} review
-                {vendor.reviewCount > 1 ? "s" : ""})
-              </Text>
+              <View style={s.ratingValue}>
+                <Ionicons name="star" size={14} color="#F5A623" />
+                <Text style={s.ratingNum}>
+                  {Number(vendor.avgRating || 0).toFixed(1)}
+                </Text>
+              </View>
+
+              <Stars value={vendor.avgRating} />
+
+              <Text style={s.reviewCount}>({vendor.reviewCount} reviews)</Text>
             </>
           ) : (
-            <Text style={s.reviewCount}>
-              No reviews yet. Be the first to review
+            <Text style={s.noReviews}>
+              No reviews yet · Be the first to review
             </Text>
           )}
         </View>
 
         {!!vendor.description && (
-          <Text style={s.desc} numberOfLines={2}>
+          <Text style={s.description} numberOfLines={2}>
             {vendor.description}
           </Text>
         )}
 
         {!!vendor.address && (
-          <View style={s.addrRow}>
-            <Ionicons name="navigate-outline" size={14} color="#94A3B8" />
-            <Text style={s.addr} numberOfLines={1}>
+          <View style={s.addressRow}>
+            <Ionicons name="navigate-outline" size={15} color="#94A3B8" />
+            <Text style={s.address} numberOfLines={1}>
               {vendor.address}
             </Text>
           </View>
         )}
       </TouchableOpacity>
 
-      {/* Actions */}
+      {/* DIVIDER */}
+      <View style={s.divider} />
+
+      {/* ACTIONS */}
       <View style={s.actions}>
         {!!vendor.phone && (
           <>
             <TouchableOpacity
-              style={s.callBtn}
+              style={s.callButton}
               onPress={call}
               activeOpacity={0.8}
             >
-              <Ionicons name="call" size={16} color="#059669" />
+              <Ionicons name="call-outline" size={17} color="#059669" />
               <Text style={s.callText}>Call</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={s.whatsappBtn}
+              style={s.whatsappButton}
               onPress={openWhatsApp}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={`Contact ${vendor.businessName} on WhatsApp`}
             >
-              <Ionicons name="logo-whatsapp" size={21} color="#FFFFFF" />
+              <Ionicons name="logo-whatsapp" size={22} color="#FFFFFF" />
             </TouchableOpacity>
           </>
         )}
 
         <TouchableOpacity
-          style={s.detailBtn}
+          style={s.detailsButton}
           onPress={onPress}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
-          <Text style={s.detailText}>View details</Text>
-          <Ionicons name="arrow-forward" size={16} color="#fff" />
+          <Text style={s.detailsText}>View details</Text>
+          <Ionicons name="arrow-forward" size={17} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
     </View>
@@ -263,98 +266,124 @@ export default function VendorCard({
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
-    marginBottom: 18,
+    marginBottom: 20,
     overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#EEF1F5",
     elevation: 3,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
   },
 
-  // Image spacing
   imageContainer: {
-    padding: 12,
+    padding: 10,
   },
 
   coverImage: {
-    width: "100%",
-    height: 190,
-    borderRadius: 14,
+    height: 205,
+    borderRadius: 15,
     backgroundColor: "#F1F5F9",
   },
 
   noCover: {
-    height: 190,
-    backgroundColor: "#F1F5F9",
-    alignItems: "center",
+    height: 205,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 15,
     justifyContent: "center",
-    borderRadius: 14,
+    alignItems: "center",
   },
 
-  badge: {
+  noCoverText: {
+    fontSize: 12,
+    color: "#94A3B8",
+    marginTop: 8,
+  },
+
+  rankBadge: {
     position: "absolute",
     top: 20,
     left: 20,
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 14,
-    paddingVertical: 5,
+    borderRadius: 8,
     paddingHorizontal: 10,
+    paddingVertical: 7,
   },
 
-  badgeText: {
-    fontWeight: "800",
+  rankText: {
     fontSize: 11,
+    fontWeight: "800",
     marginLeft: 5,
+  },
+
+  featuredBadge: {
+    position: "absolute",
+    top: 20,
+    left: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    zIndex: 2,
+  },
+
+  featuredText: {
+    color: "#92400E",
+    fontSize: 10,
+    fontWeight: "800",
+    marginLeft: 4,
+    letterSpacing: 0.5,
   },
 
   counter: {
     position: "absolute",
     top: 20,
     right: 20,
+    backgroundColor: "rgba(15,23,42,0.7)",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.55)",
-    borderRadius: 12,
-    paddingVertical: 4,
     paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
 
   counterText: {
-    color: "#fff",
-    fontSize: 12,
+    color: "#FFFFFF",
+    fontSize: 11,
     fontWeight: "700",
     marginLeft: 5,
   },
 
   dots: {
     position: "absolute",
-    bottom: 20,
-    left: 0,
-    right: 0,
+    bottom: 18,
+    right: 20,
     flexDirection: "row",
-    justifyContent: "center",
   },
 
   dot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.55)",
+    borderRadius: 4,
     marginHorizontal: 3,
+    backgroundColor: "rgba(255,255,255,0.65)",
   },
 
   dotActive: {
-    backgroundColor: "#fff",
-    width: 16,
+    width: 18,
+    backgroundColor: "#FFFFFF",
   },
 
   body: {
     paddingHorizontal: 16,
-    paddingTop: 4,
+    paddingTop: 8,
+    paddingBottom: 15,
   },
 
   titleRow: {
@@ -367,131 +396,137 @@ const s = StyleSheet.create({
     flex: 1,
     fontSize: 19,
     fontWeight: "800",
-    color: "#0F172A",
-    marginRight: 10,
+    color: "#172033",
+    marginRight: 8,
   },
 
-  distChip: {
+  distance: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#EFF6FF",
-    borderRadius: 12,
-    paddingVertical: 4,
     paddingHorizontal: 9,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
 
-  distText: {
-    color: "#1D4ED8",
-    fontWeight: "700",
+  distanceText: {
+    color: "#2563EB",
     fontSize: 12,
+    fontWeight: "700",
     marginLeft: 4,
   },
 
   ratingRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 10,
+  },
+
+  ratingValue: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 6,
   },
 
   ratingNum: {
+    color: "#334155",
+    fontSize: 13,
     fontWeight: "800",
-    color: "#92400E",
-    marginRight: 6,
-    fontSize: 15,
+    marginLeft: 3,
+  },
+
+  stars: {
+    flexDirection: "row",
+    gap: 1,
   },
 
   reviewCount: {
     color: "#94A3B8",
+    fontSize: 12,
+    marginLeft: 7,
+  },
+
+  noReviews: {
+    fontSize: 12,
+    color: "#64748B",
+  },
+
+  description: {
     fontSize: 13,
+    color: "#64748B",
+    lineHeight: 20,
+    marginTop: 11,
+  },
+
+  addressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  address: {
+    flex: 1,
+    color: "#64748B",
+    fontSize: 12,
     marginLeft: 6,
   },
 
-  desc: {
-    color: "#64748B",
-    marginTop: 10,
-    lineHeight: 20,
-  },
-
-  addrRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 10,
-  },
-
-  addr: {
-    flex: 1,
-    color: "#94A3B8",
-    fontSize: 12,
-    marginLeft: 5,
+  divider: {
+    height: 1,
+    backgroundColor: "#F1F5F9",
+    marginHorizontal: 16,
   },
 
   actions: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    paddingTop: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 9,
   },
 
-  callBtn: {
+  callButton: {
+    height: 44,
+    paddingHorizontal: 15,
+    backgroundColor: "#ECFDF5",
+    borderWidth: 1,
+    borderColor: "#D1FAE5",
+    borderRadius: 11,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ECFDF5",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    marginRight: 10,
   },
 
   callText: {
     color: "#059669",
+    fontSize: 13,
     fontWeight: "700",
     marginLeft: 6,
   },
 
-  whatsappBtn: {
-    width: 46,
+  whatsappButton: {
     height: 44,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 44,
     backgroundColor: "#25D366",
-    borderRadius: 12,
-    marginRight: 10,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  detailBtn: {
+  detailsButton: {
     flex: 1,
+    height: 44,
+    backgroundColor: "#2563EB",
+    borderRadius: 11,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#2563EB",
-    borderRadius: 12,
-    paddingVertical: 12,
+    gap: 8,
   },
 
-  detailText: {
-    color: "#fff",
-    fontWeight: "700",
-    marginRight: 6,
-  },
-  featuredBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    backgroundColor: "#FEF3C7",
-    borderColor: "#FDE68A",
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    marginTop: 7,
-  },
-
-  featuredText: {
-    color: "#92400E",
-    fontSize: 10,
+  detailsText: {
+    color: "#FFFFFF",
+    fontSize: 13,
     fontWeight: "800",
-    letterSpacing: 0.6,
-    marginLeft: 4,
   },
 });
