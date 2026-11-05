@@ -81,7 +81,11 @@ export default function VendorCard({ item = {}, index = 0, onPress = () => {} })
       );
     }
   };
-
+const isFeatured =
+  vendor.plan?.type === 'featured' &&
+  vendor.plan?.status === 'active' &&
+  (!vendor.plan?.expiresAt ||
+    new Date(vendor.plan.expiresAt).getTime() > Date.now());
   return (
     <View style={s.card}>
       {/* Photo carousel */}
@@ -186,6 +190,13 @@ export default function VendorCard({ item = {}, index = 0, onPress = () => {} })
             </Text>
           </View>
         </View>
+       
+{isFeatured && (
+  <View style={s.featuredBadge}>
+    <Ionicons name="star" size={12} color="#92400E" />
+    <Text style={s.featuredText}>FEATURED</Text>
+  </View>
+)}
 
         <View style={s.ratingRow}>
           {hasReviews ? (
@@ -481,4 +492,24 @@ const s = StyleSheet.create({
     fontWeight: '700',
     marginRight: 6,
   },
+  featuredBadge: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  alignSelf: 'flex-start',
+  backgroundColor: '#FEF3C7',
+  borderColor: '#FDE68A',
+  borderWidth: 1,
+  borderRadius: 6,
+  paddingHorizontal: 9,
+  paddingVertical: 5,
+  marginTop: 7,
+},
+
+featuredText: {
+  color: '#92400E',
+  fontSize: 10,
+  fontWeight: '800',
+  letterSpacing: 0.6,
+  marginLeft: 4,
+},
 });
