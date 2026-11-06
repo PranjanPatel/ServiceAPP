@@ -11,6 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFavorites } from "../context/FavoritesContext";
 
 const thumb = (url, w = 800) =>
   url?.includes("/upload/")
@@ -57,6 +58,8 @@ export default function VendorCard({
   const imageWidth = cardWidth - 20;
 
   const [page, setPage] = useState(0);
+  const { isFavorite, toggle } = useFavorites();
+  const isLiked = isFavorite(item?._id);
 
   const vendor = item || {};
   const photos = Array.isArray(vendor.photos) ? vendor.photos : [];
@@ -151,6 +154,23 @@ export default function VendorCard({
           </View>
         )}
 
+        {/* LIKE BUTTON */}
+        <TouchableOpacity
+          style={s.likeButton}
+          onPress={() => toggle(vendor._id)}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isLiked ? "Remove from favourites" : "Add to favourites"
+          }
+        >
+          <Ionicons
+            name={isLiked ? "heart" : "heart-outline"}
+            size={23}
+            color={isLiked ? "#EF4444" : "#334155"}
+          />
+        </TouchableOpacity>
+
         {/* IMAGE COUNTER */}
         {photos.length > 1 && (
           <>
@@ -177,12 +197,14 @@ export default function VendorCard({
             {vendor.businessName || "Business name"}
           </Text>
 
-          <View style={s.distance}>
-            <Ionicons name="location" size={13} color="#2563EB" />
-            <Text style={s.distanceText}>
-              {Number(vendor.distanceKm || 0).toFixed(1)} km
-            </Text>
-          </View>
+          {vendor.distanceKm != null && (
+            <View style={s.distance}>
+              <Ionicons name="location" size={13} color="#2563EB" />
+              <Text style={s.distanceText}>
+                {Number(vendor.distanceKm).toFixed(1)} km
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* RATING */}
@@ -343,7 +365,7 @@ const s = StyleSheet.create({
 
   counter: {
     position: "absolute",
-    top: 20,
+    top: 65,
     right: 20,
     backgroundColor: "rgba(15,23,42,0.7)",
     flexDirection: "row",
@@ -528,5 +550,22 @@ const s = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "800",
+  },
+  likeButton: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    zIndex: 5,
   },
 });

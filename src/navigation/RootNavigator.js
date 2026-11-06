@@ -17,6 +17,7 @@ import DashboardScreen from "../screens/vendor/DashboardScreen";
 import EditBusinessScreen from "../screens/vendor/EditBusinessScreen";
 import PlansScreen from "../screens/vendor/PlansScreen";
 import PaymentScreen from "../screens/vendor/PaymentScreen";
+import FavoritesScreen from "../screens/user/FavoritesScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -52,9 +53,18 @@ const stackOptions = (title) => ({
 function UserTabs() {
   return (
     <Tab.Navigator
-      screenOptions={tabOptions({ Home: "home", Profile: "person" })}
+      screenOptions={tabOptions({
+        Home: "home",
+        Favorites: "heart",
+        Profile: "person",
+      })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen
+        name="Favorites"
+        component={FavoritesScreen}
+        options={{ title: "Saved" }}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
