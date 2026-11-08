@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   View,
-  Text,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
@@ -9,6 +8,7 @@ import {
   StatusBar,
   Linking,
 } from "react-native";
+import { Text } from "../../components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { api } from "../../api";

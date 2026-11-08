@@ -10,7 +10,7 @@ import {
   Alert,
   useWindowDimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFavorites } from "../context/FavoritesContext";
 
 const thumb = (url, w = 800) =>
@@ -187,18 +187,18 @@ export default function VendorCard({
         <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={s.body}>
           {/* NAME + BLUE TICK */}
           <View style={s.nameRow}>
-            <Text style={s.name} numberOfLines={2}>
-              {vendor.businessName || "Business name"}
-            </Text>
             {vendor.verified && (
-              <Ionicons
-                name="shield-checkmark"
+              <MaterialCommunityIcons
+                name="check-decagram"
                 size={17}
                 color="#2563EB"
                 style={s.tick}
                 accessibilityLabel="Verified business"
               />
             )}
+            <Text style={s.name} numberOfLines={2}>
+              {vendor.businessName || "Business name"}
+            </Text>
           </View>
 
           {/* DISTANCE */}
@@ -459,7 +459,8 @@ const s = StyleSheet.create({
 
   tick: {
     marginLeft: 4,
-    marginTop: 1,
+    marginTop: 6,
+    marginRight: 4,
   },
 
   distance: {

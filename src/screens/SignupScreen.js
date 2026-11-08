@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   View,
-  Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -12,6 +10,7 @@ import {
   Platform,
   StatusBar,
 } from "react-native";
+import { Text, TextInput } from "../components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useAuth } from "../context/AuthContext";
