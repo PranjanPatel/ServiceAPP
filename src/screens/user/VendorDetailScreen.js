@@ -1,8 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
-  Text,
-  TextInput,
   ScrollView,
   FlatList,
   TouchableOpacity,
@@ -17,7 +15,8 @@ import {
   Platform,
   useWindowDimensions,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Text, TextInput } from "../../components/AppText";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { api } from "../../api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -319,11 +318,24 @@ export default function VendorDetailScreen({ route, navigation }) {
 
         {/* Main card */}
         <View style={s.card}>
-          <View style={s.catChip}>
-            <Text style={s.catText}>{vendor.category.replace(/-/g, " ")}</Text>
+          <View style={s.catRow}>
+            <View style={s.catChip}>
+              <Text style={s.catText}>
+                {vendor.category.replace(/-/g, " ")}
+              </Text>
+            </View>
+            {vendor.verified && (
+              <View style={s.verifiedPill}>
+                <MaterialCommunityIcons
+                  name="check-decagram"
+                  size={14}
+                  color="#0369A1"
+                />
+                <Text style={s.verifiedPillText}>Verified</Text>
+              </View>
+            )}
           </View>
           <Text style={s.name}>{vendor.businessName}</Text>
-
           <View style={s.metaRow}>
             <View
               style={[
@@ -723,7 +735,22 @@ const s = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 4,
     paddingHorizontal: 12,
-    marginBottom: 10,
+  },
+  catRow: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  verifiedPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E0F2FE",
+    borderRadius: 12,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    marginLeft: 8,
+  },
+  verifiedPillText: {
+    color: "#0369A1",
+    fontWeight: "700",
+    fontSize: 12,
+    marginLeft: 4,
   },
   catText: {
     color: "#2563EB",

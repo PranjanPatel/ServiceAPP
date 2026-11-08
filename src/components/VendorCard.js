@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import {
   View,
-  Text,
   FlatList,
   TouchableOpacity,
   Image,
@@ -10,6 +9,7 @@ import {
   Alert,
   useWindowDimensions,
 } from "react-native";
+import { Text } from "../components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFavorites } from "../context/FavoritesContext";
 
