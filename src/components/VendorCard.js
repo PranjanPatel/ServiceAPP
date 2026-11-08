@@ -113,6 +113,7 @@ export default function VendorCard({
           color={isLiked ? "#EF4444" : "#334155"}
         />
       </TouchableOpacity>
+
       {/* MAIN CONTENT */}
       <View style={s.mainRow}>
         {/* LEFT IMAGE */}
@@ -184,9 +185,21 @@ export default function VendorCard({
 
         {/* RIGHT DETAILS */}
         <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={s.body}>
-          <Text style={s.name} numberOfLines={2}>
-            {vendor.businessName || "Business name"}
-          </Text>
+          {/* NAME + BLUE TICK */}
+          <View style={s.nameRow}>
+            <Text style={s.name} numberOfLines={2}>
+              {vendor.businessName || "Business name"}
+            </Text>
+            {vendor.verified && (
+              <Ionicons
+                name="shield-checkmark"
+                size={17}
+                color="#2563EB"
+                style={s.tick}
+                accessibilityLabel="Verified business"
+              />
+            )}
+          </View>
 
           {/* DISTANCE */}
           {vendor.distanceKm != null && (
@@ -430,11 +443,23 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
 
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingRight: 34, // keeps the name and tick clear of the heart button
+  },
+
   name: {
+    flexShrink: 1,
     fontSize: 15,
     lineHeight: 19,
     fontWeight: "800",
     color: "#172033",
+  },
+
+  tick: {
+    marginLeft: 4,
+    marginTop: 1,
   },
 
   distance: {
