@@ -459,7 +459,7 @@ const s = StyleSheet.create({
 
   tick: {
     marginLeft: 4,
-    marginTop: 6,
+    marginTop: 2,
     marginRight: 4,
   },
 
