@@ -8,6 +8,7 @@ import {
   Linking,
   Alert,
   useWindowDimensions,
+  Platform,
 } from "react-native";
 import { Text } from "../components/AppText";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -459,7 +460,7 @@ const s = StyleSheet.create({
 
   tick: {
     marginLeft: 4,
-    marginTop: 2,
+    marginTop: Platform.OS === "ios" ? 2 : 6,
     marginRight: 4,
   },
 
