@@ -231,7 +231,23 @@ export default function ResultsScreen({ route, navigation }) {
           <Text style={s.locationSummaryText}>
             Showing professionals near you
           </Text>
-          <Text style={s.distanceSummary}>{radius} km</Text>
+          <TouchableOpacity
+            style={s.distanceSummary}
+            activeOpacity={0.7}
+            onPress={() => {
+              const currentIndex = RADII.indexOf(radius);
+              const nextIndex = (currentIndex + 1) % RADII.length;
+              setRadius(RADII[nextIndex]);
+            }}
+          >
+            <Text style={s.distanceSummaryText}>{radius} km</Text>
+            <Ionicons
+              name="sync-outline"
+              size={13}
+              color="#FFFFFF"
+              style={{ marginLeft: 5 }}
+            />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -562,14 +578,22 @@ const s = StyleSheet.create({
     marginLeft: 6,
   },
   distanceSummary: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.20)",
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+
+  distanceSummaryText: {
     color: "#FFFFFF",
     fontSize: 12,
-    fontWeight: "700",
-    backgroundColor: "rgba(255,255,255,0.17)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    fontWeight: "800",
   },
+
   activeFiltersRow: {
     minHeight: 54,
     paddingHorizontal: 20,
