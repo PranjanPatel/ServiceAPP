@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import {
   View,
+  Text,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
   StatusBar,
   Linking,
+  ScrollView,
 } from "react-native";
-import { Text } from "../../components/AppText";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { api } from "../../api";
@@ -16,6 +17,12 @@ import { toSlug } from "../../categories";
 import VendorCard from "../../components/VendorCard";
 
 const RADII = [5, 10, 25, 50];
+const RATINGS = [
+  { value: 0, label: "Any rating" },
+  { value: 3, label: "3.0+" },
+  { value: 4, label: "4.0+" },
+  { value: 4.5, label: "4.5+" },
+];
 
 export default function ResultsScreen({ route, navigation }) {
   const { category } = route.params;
@@ -25,6 +32,10 @@ export default function ResultsScreen({ route, navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [denied, setDenied] = useState(false);
+
+  // filters
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [minRating, setMinRating] = useState(0);
 
   // 1) get the user's location once
   useEffect(() => {
@@ -64,11 +75,30 @@ export default function ResultsScreen({ route, navigation }) {
     })();
   }, [coords, radius, category]);
 
+  // 3) apply filters (the order from the server is kept)
+  const filtered = vendors.filter((v) => {
+    if (verifiedOnly && !v.verified) return false;
+    if (
+      minRating > 0 &&
+      !(Number(v.reviewCount) > 0 && Number(v.avgRating) >= minRating)
+    )
+      return false;
+    return true;
+  });
+
+  const filtersOn = verifiedOnly || minRating > 0;
+  const clearFilters = () => {
+    setVerifiedOnly(false);
+    setMinRating(0);
+  };
+
   const subtitle = loading
     ? "Searching near you..."
     : error
       ? "Something went wrong"
-      : `${vendors.length} pro${vendors.length === 1 ? "" : "s"} within ${radius} km`;
+      : filtersOn
+        ? `${filtered.length} of ${vendors.length} within ${radius} km`
+        : `${vendors.length} pro${vendors.length === 1 ? "" : "s"} within ${radius} km`;
 
   const nextRadius = RADII[RADII.indexOf(radius) + 1];
 
@@ -111,6 +141,67 @@ export default function ResultsScreen({ route, navigation }) {
         </View>
       </View>
 
+      {/* Filters */}
+      {!error && (
+        <View style={s.filterBar}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.filterContent}
+          >
+            <TouchableOpacity
+              style={[s.fChip, verifiedOnly && s.fChipActive]}
+              onPress={() => setVerifiedOnly((v) => !v)}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="shield-checkmark"
+                size={14}
+                color={verifiedOnly ? "#fff" : "#2563EB"}
+              />
+              <Text style={[s.fText, verifiedOnly && s.fTextActive]}>
+                Verified
+              </Text>
+            </TouchableOpacity>
+
+            <View style={s.sep} />
+
+            {RATINGS.map((r) => {
+              const active = minRating === r.value;
+              return (
+                <TouchableOpacity
+                  key={r.value}
+                  style={[s.fChip, active && s.fChipActive]}
+                  onPress={() => setMinRating(r.value)}
+                  activeOpacity={0.8}
+                >
+                  {r.value > 0 && (
+                    <Ionicons
+                      name="star"
+                      size={13}
+                      color={active ? "#fff" : "#F59E0B"}
+                    />
+                  )}
+                  <Text style={[s.fText, active && s.fTextActive]}>
+                    {r.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+
+            {filtersOn && (
+              <TouchableOpacity
+                style={s.clear}
+                onPress={clearFilters}
+                hitSlop={8}
+              >
+                <Text style={s.clearText}>Clear</Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Body */}
       {loading ? (
         <View style={s.center}>
@@ -141,12 +232,12 @@ export default function ResultsScreen({ route, navigation }) {
         </View>
       ) : (
         <FlatList
-          data={vendors}
+          data={filtered}
           keyExtractor={(v) => v._id}
-          renderItem={({ item, index }) => (
+          renderItem={({ item }) => (
             <VendorCard
               item={item}
-              index={index}
+              index={vendors.indexOf(item)} // keeps "Top match" tied to the real ranking
               onPress={() =>
                 navigation.navigate("VendorDetail", {
                   id: item._id,
@@ -162,24 +253,41 @@ export default function ResultsScreen({ route, navigation }) {
           }}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <View style={s.center}>
-              <Ionicons name="search-outline" size={52} color="#CBD5E1" />
-              <Text style={s.emptyTitle}>No {category} pros found</Text>
-              <Text style={s.centerText}>
-                Nobody within {radius} km yet.
-                {nextRadius ? " Try a bigger distance." : ""}
-              </Text>
-              {nextRadius && (
-                <TouchableOpacity
-                  style={s.actionBtn}
-                  onPress={() => setRadius(nextRadius)}
-                >
-                  <Text style={s.actionText}>
-                    Search within {nextRadius} km
-                  </Text>
+            filtersOn && vendors.length > 0 ? (
+              <View style={s.center}>
+                <Ionicons name="funnel-outline" size={52} color="#CBD5E1" />
+                <Text style={s.emptyTitle}>No pros match your filters</Text>
+                <Text style={s.centerText}>
+                  {vendors.length} {category.toLowerCase()} pro
+                  {vendors.length === 1 ? "" : "s"} nearby, but none are
+                  {verifiedOnly ? " verified" : ""}
+                  {verifiedOnly && minRating > 0 ? " and" : ""}
+                  {minRating > 0 ? ` rated ${minRating}+` : ""}.
+                </Text>
+                <TouchableOpacity style={s.actionBtn} onPress={clearFilters}>
+                  <Text style={s.actionText}>Clear filters</Text>
                 </TouchableOpacity>
-              )}
-            </View>
+              </View>
+            ) : (
+              <View style={s.center}>
+                <Ionicons name="search-outline" size={52} color="#CBD5E1" />
+                <Text style={s.emptyTitle}>No {category} pros found</Text>
+                <Text style={s.centerText}>
+                  Nobody within {radius} km yet.
+                  {nextRadius ? " Try a bigger distance." : ""}
+                </Text>
+                {nextRadius && (
+                  <TouchableOpacity
+                    style={s.actionBtn}
+                    onPress={() => setRadius(nextRadius)}
+                  >
+                    <Text style={s.actionText}>
+                      Search within {nextRadius} km
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )
           }
         />
       )}
@@ -188,7 +296,7 @@ export default function ResultsScreen({ route, navigation }) {
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#efeff0" },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
 
   header: {
     backgroundColor: "#2563EB",
@@ -228,6 +336,26 @@ const s = StyleSheet.create({
   chipActive: { backgroundColor: "#fff" },
   chipText: { color: "#fff", fontWeight: "600" },
   chipTextActive: { color: "#2563EB" },
+
+  filterBar: { paddingTop: 14 },
+  filterContent: { paddingHorizontal: 20, alignItems: "center" },
+  fChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#E2E8F0",
+    borderRadius: 20,
+    paddingVertical: 7,
+    paddingHorizontal: 13,
+    marginRight: 8,
+  },
+  fChipActive: { backgroundColor: "#2563EB", borderColor: "#2563EB" },
+  fText: { color: "#334155", fontWeight: "600", fontSize: 13, marginLeft: 5 },
+  fTextActive: { color: "#fff" },
+  sep: { width: 1, height: 22, backgroundColor: "#CBD5E1", marginRight: 8 },
+  clear: { paddingHorizontal: 8, paddingVertical: 6 },
+  clearText: { color: "#DC2626", fontWeight: "700", fontSize: 13 },
 
   center: {
     alignItems: "center",
